@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox
 from bear_student.domain.evaluations import ServicioEvaluaciones
 from bear_student.domain.students_courses import SistemaEscolar
 from bear_student.ui.evaluations_view import EvaluacionesView
+from bear_student.ui.widgets import BotonInvierno, PestanaDesplazable
 from bear_student.ui.theme import (
     ALTO_LOGO,
     BOTON,
@@ -16,49 +17,6 @@ from bear_student.ui.theme import (
     TITULO,
     elegir_familia,
 )
-
-
-class BotonInvierno(tk.Button):
-    """Botón Tkinter plano con estados de la paleta Bear Student."""
-
-    def __init__(self, parent, texto, comando, fuente, primario=True):
-        self.primario = primario
-        self.color_normal = C.AZUL_INVIERNO if primario else C.BLANCO
-        self.color_hover = C.AZUL_PROFUNDO if primario else C.AZUL_NIEBLA
-        self.color_presionado = C.AZUL_NOCHE if primario else C.AZUL_ESCARCHA
-        self.color_texto = C.BLANCO if primario else C.AZUL_INVIERNO
-        super().__init__(
-            parent,
-            text=texto,
-            command=comando,
-            font=fuente,
-            bg=self.color_normal,
-            fg=self.color_texto,
-            activebackground=self.color_presionado,
-            activeforeground=self.color_texto,
-            disabledforeground=C.GRIS_ACERO,
-            relief="flat",
-            borderwidth=0,
-            padx=16,
-            pady=9,
-            cursor="hand2",
-            takefocus=True,
-        )
-        self.bind("<Enter>", lambda _evento: self._color(self.color_hover))
-        self.bind("<Leave>", lambda _evento: self._color(self.color_normal))
-        self.bind("<ButtonPress-1>", lambda _evento: self._color(self.color_presionado))
-        self.bind("<ButtonRelease-1>", lambda _evento: self._color(self.color_hover))
-
-    def _color(self, color):
-        if str(self["state"]) != "disabled":
-            self.configure(bg=color)
-
-    def habilitar(self, valor):
-        self.configure(state="normal" if valor else "disabled")
-        self.configure(
-            bg=self.color_normal if valor else C.GRIS_BORDE,
-            cursor="hand2" if valor else "arrow",
-        )
 
 
 class Aplicacion(tk.Tk):
@@ -188,8 +146,14 @@ class Aplicacion(tk.Tk):
                                font=self._f(NOTA), padx=16, pady=8)
         self.estado.pack(fill="x", side="bottom")
 
-        cont = ttk.Frame(self)
-        cont.pack(fill="x", padx=16, pady=(16, 8))
+        # Los formularios viven en su propia pestaña para que las tablas y la
+        # pestaña de evaluaciones tengan todo el alto de la ventana.
+        self.pestanas = ttk.Notebook(self)
+        self.pestanas.pack(fill="both", expand=True, padx=16, pady=16)
+        registro = PestanaDesplazable(self.pestanas, "Registro", padding=(8, 16, 8, 8)).interior
+
+        cont = ttk.Frame(registro)
+        cont.pack(fill="x", pady=(0, 8))
 
         marco_est, est = self._panel(cont, "Registrar estudiante")
         marco_est.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
@@ -206,8 +170,8 @@ class Aplicacion(tk.Tk):
         self._botones(cur, 2, "Guardar curso", self.registrar_curso, (self.clave, self.nombre_curso))
         cont.columnconfigure((0, 1), weight=1, uniform="formularios")
 
-        marco_ins, ins = self._panel(self, "Inscribir estudiante en un curso")
-        marco_ins.pack(fill="x", padx=16, pady=8)
+        marco_ins, ins = self._panel(registro, "Inscribir estudiante en un curso")
+        marco_ins.pack(fill="x", pady=8)
         ttk.Label(ins, text="Estudiante", style="Panel.TLabel").grid(row=0, column=0, sticky="w")
         ttk.Label(ins, text="Curso", style="Panel.TLabel").grid(row=0, column=1, sticky="w", padx=(8, 0))
         self.combo_est = ttk.Combobox(ins, state="readonly", width=30, style="Campo.TCombobox",
@@ -220,8 +184,6 @@ class Aplicacion(tk.Tk):
         self.btn_inscribir.grid(row=1, column=2, padx=(16, 0), pady=(4, 0))
         ins.columnconfigure((0, 1), weight=1)
 
-        self.pestanas = ttk.Notebook(self)
-        self.pestanas.pack(fill="both", expand=True, padx=16, pady=(8, 16))
         self.tabla_est = self._crear_tabla(
             "Estudiantes",
             [("matricula", "Matrícula", 140, "w"), ("nombre", "Nombre", 300, "w"),
