@@ -34,7 +34,7 @@ input.invalid { border-color: var(--error); outline-color: var(--error); }
 
 /* Botones: primario (relleno) y secundario (borde) con hover, presionado y deshabilitado */
 .btn { min-height: 36px; padding: 0 24px; border: 2px solid var(--azul-invierno); border-radius: 18px;
-    font: 600 14px/1 inherit; font-family: inherit; cursor: pointer; }
+    font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .primario { background: var(--azul-invierno); color: var(--blanco); }
 .primario:hover { background: var(--azul-profundo); border-color: var(--azul-profundo); }
 .primario:active { background: var(--azul-noche); border-color: var(--azul-noche); }
@@ -47,8 +47,7 @@ input.invalid { border-color: var(--error); outline-color: var(--error); }
 .tab-lista { display: flex; gap: 2px; }
 .tab { padding: 8px 16px; border: 1px solid var(--azul-escarcha); border-bottom: 3px solid transparent;
     border-radius: 8px 8px 0 0; background: var(--azul-niebla); color: var(--gris-pizarra);
-    font: 700 14px inherit; font-family: inherit; cursor: pointer; }
-.tab:hover { background: var(--azul-escarcha); }
+    font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }.tab:hover { background: var(--azul-escarcha); }
 .tab.activa { background: var(--blanco); color: var(--azul-invierno); border-bottom-color: var(--azul-invierno); }
 .tab-panel { background: var(--blanco); border: 1px solid var(--azul-escarcha); padding: 8px; min-height: 180px; overflow-x: auto; }
 .tab-panel[hidden] { display: none; }
