@@ -9,6 +9,7 @@ from bear_student.ui.theme import (
     C,
     TEXTO,
 )
+from bear_student.ui.widgets import BotonInvierno, PestanaDesplazable
 
 
 class EvaluacionesView:
@@ -22,8 +23,9 @@ class EvaluacionesView:
         self.entradas_notas = {}
         self.clave_evaluacion_activa = ""
 
-        self.frame = ttk.Frame(notebook, padding=16)
-        notebook.add(self.frame, text="Evaluaciones")
+        # La pestaña es más alta que la ventana: se envuelve en un área con scroll.
+        self.pestana = PestanaDesplazable(notebook, "Evaluaciones")
+        self.frame = self.pestana.interior
         self._crear_interfaz()
         self.actualizar()
 
@@ -163,33 +165,7 @@ class EvaluacionesView:
         return panel, cuerpo
 
     def _boton(self, parent, texto, comando):
-        boton = tk.Button(
-            parent,
-            text=texto,
-            command=comando,
-            font=(self.fuente[0], BOTON, "bold"),
-            bg=C.AZUL_INVIERNO,
-            fg=C.BLANCO,
-            activebackground=C.AZUL_PROFUNDO,
-            activeforeground=C.BLANCO,
-            disabledforeground=C.GRIS_ACERO,
-            relief="flat",
-            bd=0,
-            padx=16,
-            pady=9,
-            cursor="hand2",
-        )
-        boton.bind("<Enter>", lambda _evento: boton.configure(bg=C.AZUL_PROFUNDO))
-        boton.bind("<Leave>", lambda _evento: boton.configure(bg=C.AZUL_INVIERNO))
-        boton.bind(
-            "<ButtonPress-1>",
-            lambda _evento: boton.configure(bg=C.AZUL_NOCHE),
-        )
-        boton.bind(
-            "<ButtonRelease-1>",
-            lambda _evento: boton.configure(bg=C.AZUL_PROFUNDO),
-        )
-        return boton
+        return BotonInvierno(parent, texto, comando, (self.fuente[0], BOTON, "bold"))
 
     def actualizar(self):
         clave_curso_actual = self._clave_seleccion(self.combo_curso.get())
@@ -258,7 +234,7 @@ class EvaluacionesView:
                 text="Selecciona una evaluación para ver sus estudiantes."
             )
             self.mensaje_vacio.pack(anchor="w", pady=4)
-            self.boton_guardar_lote.configure(state="disabled")
+            self.boton_guardar_lote.habilitar(False)
             return
 
         curso = self.sistema_escolar.cursos[evaluacion.curso_clave]
@@ -270,7 +246,7 @@ class EvaluacionesView:
         if not estudiantes:
             self.mensaje_vacio.configure(text="Este curso aún no tiene estudiantes inscritos.")
             self.mensaje_vacio.pack(anchor="w", pady=4)
-            self.boton_guardar_lote.configure(state="disabled")
+            self.boton_guardar_lote.habilitar(False)
             return
 
         self.mensaje_vacio.pack_forget()
@@ -302,7 +278,7 @@ class EvaluacionesView:
         self.contenedor_filas.columnconfigure(0, weight=1)
         self.boton_guardar_lote.pack_forget()
         self.boton_guardar_lote.pack(anchor="w", pady=(12, 0))
-        self.boton_guardar_lote.configure(state="normal")
+        self.boton_guardar_lote.habilitar(True)
 
     def _ajustar_region_filas(self, _evento=None):
         self.canvas_filas.configure(scrollregion=self.canvas_filas.bbox("all"))
