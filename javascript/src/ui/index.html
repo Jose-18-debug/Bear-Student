@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bear Student · Estudiantes y cursos</title>
+    <title>Bear Student · Estudiantes, cursos y calificaciones</title>
     <!-- Nunito desde Google Fonts; si no carga, el navegador usa Segoe UI o Arial -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
     <link rel="stylesheet" href="estilos.css">
@@ -11,7 +11,7 @@
 <body>
 <header class="barra">
     <div class="logo" role="img" aria-label="Bear Student"></div>
-    <p class="barra-texto">Registro de estudiantes,<br>cursos e inscripciones</p>
+    <p class="barra-texto">Registro de estudiantes, cursos,<br>evaluaciones y calificaciones</p>
 </header>
 <div class="linea"></div>
 
@@ -59,11 +59,57 @@
         </div>
     </section>
 
+    <section class="formularios">
+        <form class="panel" id="form-evaluacion" novalidate>
+            <h2>Registrar evaluación</h2>
+            <label for="ev-curso">Curso</label>
+            <select id="ev-curso"></select>
+            <label for="ev-nombre">Nombre de la evaluación</label>
+            <input id="ev-nombre" autocomplete="off" placeholder="Parcial 1">
+            <label for="ev-ponderacion">Ponderación (%)</label>
+            <input id="ev-ponderacion" autocomplete="off" inputmode="decimal" placeholder="30">
+            <p class="nota" id="ev-disponible"></p>
+            <div class="botones">
+                <button type="submit" class="btn primario" id="btn-evaluacion">Guardar evaluación</button>
+                <button type="button" class="btn secundario" id="limpiar-evaluacion">Limpiar</button>
+            </div>
+        </form>
+
+        <form class="panel" id="form-calificacion" novalidate>
+            <h2>Capturar calificación</h2>
+            <label for="cal-estudiante">Estudiante</label>
+            <select id="cal-estudiante"></select>
+            <label for="cal-curso">Curso (solo los inscritos)</label>
+            <select id="cal-curso"></select>
+            <label for="cal-evaluacion">Evaluación</label>
+            <select id="cal-evaluacion"></select>
+            <label for="cal-valor">Calificación (0 a 10)</label>
+            <input id="cal-valor" autocomplete="off" inputmode="decimal" placeholder="8.5">
+            <div class="botones">
+                <button type="submit" class="btn primario" id="btn-calificacion">Guardar calificación</button>
+                <button type="button" class="btn secundario" id="limpiar-calificacion">Limpiar</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Procesar calificaciones de varios estudiantes</h2>
+        <p class="nota">Una calificación por línea: matrícula, clave del curso, evaluación, calificación (con punto decimal).</p>
+        <textarea id="lote" rows="5" spellcheck="false" placeholder="A001,MAT101,Parcial 1,8.5&#10;A002,MAT101,Parcial 1,9"></textarea>
+        <div class="botones">
+            <button type="button" class="btn primario" id="btn-lote">Procesar</button>
+            <button type="button" class="btn secundario" id="limpiar-lote">Limpiar</button>
+        </div>
+        <ul class="lote-errores" id="lote-errores"></ul>
+    </section>
+
     <section>
         <div class="tab-lista" role="tablist">
             <button class="tab activa" data-tab="estudiantes" role="tab">Estudiantes</button>
             <button class="tab" data-tab="cursos" role="tab">Cursos</button>
             <button class="tab" data-tab="inscripciones" role="tab">Inscripciones</button>
+            <button class="tab" data-tab="evaluaciones" role="tab">Evaluaciones</button>
+            <button class="tab" data-tab="calificaciones" role="tab">Calificaciones</button>
         </div>
 
         <div class="tab-panel" id="tab-estudiantes">
@@ -88,6 +134,22 @@
                 <tbody id="tbody-inscripciones"></tbody>
             </table>
             <p class="vacio" id="vacio-inscripciones">Todavía no hay inscripciones. Registra un estudiante y un curso para inscribirlo.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-evaluaciones" hidden>
+            <table>
+                <thead><tr><th>Curso</th><th>Evaluación</th><th class="num">Ponderación (%)</th></tr></thead>
+                <tbody id="tbody-evaluaciones"></tbody>
+            </table>
+            <p class="vacio" id="vacio-evaluaciones">Aún no hay evaluaciones. Registra la primera eligiendo un curso.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-calificaciones" hidden>
+            <table>
+                <thead><tr><th>Estudiante</th><th>Curso</th><th>Evaluación</th><th class="num">Calificación</th></tr></thead>
+                <tbody id="tbody-calificaciones"></tbody>
+            </table>
+            <p class="vacio" id="vacio-calificaciones">Aún no hay calificaciones capturadas.</p>
         </div>
     </section>
 </main>

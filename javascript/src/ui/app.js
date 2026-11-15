@@ -6,6 +6,8 @@ const $ = (id) => document.getElementById(id);
 const campos = {
     estudiante: [$('matricula'), $('nombre'), $('grupo')],
     curso: [$('clave'), $('nombre-curso')],
+    evaluacion: [$('ev-nombre'), $('ev-ponderacion')],
+    calificacion: [$('cal-valor')],
 };
 let temporizadorAviso;
 
@@ -67,6 +69,23 @@ function llenarSelect(select, opciones) {
     if (opciones.some(([valor]) => valor === previo)) select.value = previo;
 }
 
+// Los selects de captura dependen uno del otro: estudiante -> sus cursos -> evaluaciones del curso.
+function actualizarSelectsCalificacion() {
+    const matricula = $('cal-estudiante').value;
+    llenarSelect($('cal-curso'), gestor.cursosDeEstudiante(matricula).map((clave) =>
+        [clave, `${clave} | ${gestor.cursos.get(clave).nombre}`]));
+    llenarSelect($('cal-evaluacion'), gestor.evaluacionesDeCurso($('cal-curso').value).map((ev) =>
+        [ev.nombre, `${ev.nombre} (${ev.ponderacion}%)`]));
+    $('btn-calificacion').disabled = $('cal-evaluacion').options.length === 0;
+}
+
+function mostrarPonderacionDisponible() {
+    const clave = $('ev-curso').value;
+    $('ev-disponible').textContent = clave
+        ? `Ponderación disponible en ${clave}: ${+(100 - gestor.ponderacionTotal(clave)).toFixed(2)}%`
+        : '';
+}
+
 // Vuelve a pintar todo desde el estado del gestor.
 function actualizar() {
     const estudiantes = [...gestor.estudiantes.values()];
@@ -83,9 +102,24 @@ function actualizar() {
         gestor.cursosDeEstudiante(e.matricula).map((clave) => [e.nombre, gestor.cursos.get(clave).nombre]));
     llenarTabla('inscripciones', inscripciones);
 
+    llenarSelect($('ev-curso'), cursos.map((c) => [c.clave, `${c.clave} | ${c.nombre}`]));
+    llenarSelect($('cal-estudiante'), estudiantes.map((e) => [e.matricula, `${e.matricula} | ${e.nombre}`]));
+    actualizarSelectsCalificacion();
+    mostrarPonderacionDisponible();
+    $('btn-evaluacion').disabled = cursos.length === 0;
+
+    const evaluaciones = cursos.flatMap((c) =>
+        gestor.evaluacionesDeCurso(c.clave).map((ev) => [c.nombre, ev.nombre, ev.ponderacion]));
+    llenarTabla('evaluaciones', evaluaciones);
+    const calificaciones = estudiantes.flatMap((e) => gestor.cursosDeEstudiante(e.matricula).flatMap((clave) =>
+        gestor.calificacionesDe(e.matricula, clave).map((c) =>
+            [e.nombre, gestor.cursos.get(clave).nombre, c.evaluacion, c.valor])));
+    llenarTabla('calificaciones', calificaciones);
+
     $('btn-inscribir').disabled = estudiantes.length === 0 || cursos.length === 0;
     $('estado').textContent =
-        `Estudiantes: ${estudiantes.length}     Cursos: ${cursos.length}     Inscripciones: ${inscripciones.length}`;
+        `Estudiantes: ${estudiantes.length}     Cursos: ${cursos.length}     Inscripciones: ${inscripciones.length}` +
+        `     Evaluaciones: ${evaluaciones.length}     Calificaciones: ${calificaciones.length}`;
 }
 
 // ---- Eventos ----
@@ -101,7 +135,72 @@ $('form-curso').addEventListener('submit', (e) => {
 });
 $('btn-inscribir').addEventListener('click', () =>
     intentar(() => gestor.inscribir($('sel-estudiante').value, $('sel-curso').value), 'Inscripción realizada.'));
+$('form-evaluacion').addEventListener('submit', (e) => {
+    e.preventDefault();
+    intentar(() => gestor.registrarEvaluacion($('ev-curso').value, $('ev-nombre').value, $('ev-ponderacion').value),
+        'Evaluación registrada.', campos.evaluacion);
+});
+$('form-calificacion').addEventListener('submit', (e) => {
+    e.preventDefault();
+    intentar(() => gestor.capturarCalificacion($('cal-estudiante').value, $('cal-curso').value,
+        $('cal-evaluacion').value, $('cal-valor').value), 'Calificación guardada.', campos.calificacion);
+});
+$('cal-estudiante').addEventListener('change', actualizarSelectsCalificacion);
+$('cal-curso').addEventListener('change', actualizarSelectsCalificacion);
+$('ev-curso').addEventListener('change', mostrarPonderacionDisponible);
+
+// Convierte el texto del lote en objetos para el gestor. Guarda el número de línea de cada uno
+// para que los errores digan en qué línea del cuadro de texto están.
+function leerLote(texto) {
+    const datos = [];
+    const lineas = [];
+    const erroresFormato = [];
+    texto.split(/\r?\n/).forEach((linea, i) => {
+        if (!linea.trim()) return;
+        const partes = linea.split(',').map((p) => p.trim());
+        if (partes.length !== 4) {
+            erroresFormato.push({ linea: i + 1, texto: linea,
+                mensaje: 'Debe tener 4 valores separados por coma (usa punto decimal, no coma)' });
+            return;
+        }
+        const [matricula, clave, evaluacion, valor] = partes;
+        datos.push({ matricula, clave, evaluacion, valor });
+        lineas.push({ linea: i + 1, texto: linea });
+    });
+    return { datos, lineas, erroresFormato };
+}
+
+$('btn-lote').addEventListener('click', () => {
+    const { datos, lineas, erroresFormato } = leerLote($('lote').value);
+    if (datos.length === 0 && erroresFormato.length === 0) {
+        $('lote').classList.add('invalid');
+        $('lote').focus();
+        aviso('Escribe al menos una calificación.', 'error');
+        return;
+    }
+    const { exitosas, errores } = gestor.procesarCalificaciones(datos);
+    const todos = [...erroresFormato,
+        ...errores.map((e) => ({ ...lineas[e.fila - 1], mensaje: e.mensaje }))].sort((a, b) => a.linea - b.linea);
+    $('lote-errores').replaceChildren(...todos.map((e) => {
+        const li = document.createElement('li');
+        li.textContent = `Línea ${e.linea} (${e.texto.trim()}): ${e.mensaje}`;
+        return li;
+    }));
+    if (todos.length === 0) $('lote').value = '';
+    actualizar();
+    aviso(`${exitosas.length} guardadas, ${todos.length} con error.`, todos.length ? 'error' : 'ok');
+});
+$('limpiar-lote').addEventListener('click', () => {
+    $('lote').value = '';
+    $('lote').classList.remove('invalid');
+    $('lote-errores').replaceChildren();
+    $('lote').focus();
+});
+$('lote').addEventListener('input', () => $('lote').classList.remove('invalid'));
+
 $('limpiar-estudiante').addEventListener('click', () => limpiar(campos.estudiante));
+$('limpiar-evaluacion').addEventListener('click', () => limpiar(campos.evaluacion));
+$('limpiar-calificacion').addEventListener('click', () => limpiar(campos.calificacion));
 $('limpiar-curso').addEventListener('click', () => limpiar(campos.curso));
 
 // Quita el rojo de un campo en cuanto el usuario vuelve a escribir.
