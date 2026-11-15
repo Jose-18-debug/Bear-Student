@@ -1,6 +1,6 @@
-import { Estudiante, Curso, Inscripcion } from './modelo.js';
+import { Estudiante, Curso, Inscripcion, Evaluacion, Calificacion } from './modelo.js';
 import { ValidacionError } from './errores.js';
-import { textoObligatorio } from './validacion.js';
+import { textoObligatorio, numeroEnRango } from './validacion.js';
 
 export class GestorAcademico {
     constructor() {
@@ -9,6 +9,8 @@ export class GestorAcademico {
         //Índices con Set para consultar rápido incluso con 50,000 estudiantes
         this.cursosPorEstudiante = new Map();  //matricula -> Set de claves de curso
         this.estudiantesPorCurso = new Map();  //clave -> Set de matrículas
+        this.evaluaciones = new Map();         //clave -> Map nombre -> Evaluacion
+        this.calificaciones = new Map();       //"matricula|clave" -> Map nombre de evaluación -> Calificacion
     }
 
     registrarEstudiante(matricula, nombre, grupo) {
@@ -33,6 +35,7 @@ export class GestorAcademico {
         const curso = new Curso(cla, nom);
         this.cursos.set(cla, curso);
         this.estudiantesPorCurso.set(cla, new Set());
+        this.evaluaciones.set(cla, new Map());
         return curso;
     }
 
@@ -63,5 +66,70 @@ export class GestorAcademico {
 
     estudiantesDeCurso(clave) {
         return [...(this.estudiantesPorCurso.get(clave) ?? [])];
+    }
+
+    //La ponderación es el porcentaje que vale la evaluación; las de un curso no pueden sumar más de 100
+    registrarEvaluacion(clave, nombre, ponderacion) {
+        if (!this.cursos.has(clave)) {
+            throw new ValidacionError(`El curso ${clave} no existe`);
+        }
+        const nom = textoObligatorio(nombre, 'El nombre de la evaluación no puede estar vacío');
+        const pon = numeroEnRango(ponderacion, 0, 100, 'La ponderación debe ser un número entre 0 y 100');
+        if (pon === 0) {
+            throw new ValidacionError('La ponderación debe ser mayor que 0');
+        }
+        const delCurso = this.evaluaciones.get(clave);
+        if (delCurso.has(nom)) {
+            throw new ValidacionError(`El curso ${clave} ya tiene una evaluación llamada ${nom}`);
+        }
+        const suma = this.ponderacionTotal(clave);
+        if (suma + pon > 100 + 1e-9) {   //el margen evita errores de redondeo como 0.1 + 0.2
+            throw new ValidacionError(`Las ponderaciones del curso ${clave} sumarían ${suma + pon}%, el máximo es 100%`);
+        }
+        const evaluacion = new Evaluacion(clave, nom, pon);
+        delCurso.set(nom, evaluacion);
+        return evaluacion;
+    }
+
+    //Calificación de 0 a 10; solo para estudiantes inscritos y una sola vez por evaluación
+    capturarCalificacion(matricula, clave, nombreEvaluacion, valor) {
+        if (!this.estudiantes.has(matricula)) {
+            throw new ValidacionError(`El estudiante ${matricula} no existe`);
+        }
+        if (!this.cursos.has(clave)) {
+            throw new ValidacionError(`El curso ${clave} no existe`);
+        }
+        if (!this.estaInscrito(matricula, clave)) {
+            throw new ValidacionError(`El estudiante ${matricula} no está inscrito en el curso ${clave}`);
+        }
+        const nom = typeof nombreEvaluacion === 'string' ? nombreEvaluacion.trim() : nombreEvaluacion;
+        if (!this.evaluaciones.get(clave).has(nom)) {
+            throw new ValidacionError(`El curso ${clave} no tiene una evaluación llamada ${nom}`);
+        }
+        const val = numeroEnRango(valor, 0, 10, 'La calificación debe ser un número entre 0 y 10');
+        const llave = `${matricula}|${clave}`;
+        if (!this.calificaciones.has(llave)) {
+            this.calificaciones.set(llave, new Map());
+        }
+        const delEstudiante = this.calificaciones.get(llave);
+        if (delEstudiante.has(nom)) {
+            throw new ValidacionError(`El estudiante ${matricula} ya tiene calificación en ${nom} del curso ${clave}`);
+        }
+        const calificacion = new Calificacion(matricula, clave, nom, val);
+        delEstudiante.set(nom, calificacion);
+        return calificacion;
+    }
+
+    evaluacionesDeCurso(clave) {
+        return [...(this.evaluaciones.get(clave)?.values() ?? [])];
+    }
+
+    ponderacionTotal(clave) {
+        return this.evaluacionesDeCurso(clave).reduce((suma, e) => suma + e.ponderacion, 0);
+    }
+
+    //Calificaciones de un estudiante en un curso; las usará el cálculo del promedio final
+    calificacionesDe(matricula, clave) {
+        return [...(this.calificaciones.get(`${matricula}|${clave}`)?.values() ?? [])];
     }
 }
