@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bear Student · Estudiantes y cursos</title>
+    <!-- Nunito desde Google Fonts; si no carga, el navegador usa Segoe UI o Arial -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<header class="barra">
+    <div class="logo" role="img" aria-label="Bear Student"></div>
+    <p class="barra-texto">Registro de estudiantes,<br>cursos e inscripciones</p>
+</header>
+<div class="linea"></div>
+
+<main>
+    <section class="formularios">
+        <form class="panel" id="form-estudiante" novalidate>
+            <h2>Registrar estudiante</h2>
+            <label for="matricula">Matrícula</label>
+            <input id="matricula" autocomplete="off">
+            <label for="nombre">Nombre</label>
+            <input id="nombre" autocomplete="off">
+            <label for="grupo">Grupo</label>
+            <input id="grupo" autocomplete="off">
+            <div class="botones">
+                <button type="submit" class="btn primario">Guardar estudiante</button>
+                <button type="button" class="btn secundario" id="limpiar-estudiante">Limpiar</button>
+            </div>
+        </form>
+
+        <form class="panel" id="form-curso" novalidate>
+            <h2>Registrar curso</h2>
+            <label for="clave">Clave</label>
+            <input id="clave" autocomplete="off">
+            <label for="nombre-curso">Nombre del curso</label>
+            <input id="nombre-curso" autocomplete="off">
+            <div class="botones">
+                <button type="submit" class="btn primario">Guardar curso</button>
+                <button type="button" class="btn secundario" id="limpiar-curso">Limpiar</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Inscribir estudiante en un curso</h2>
+        <div class="fila-inscribir">
+            <div>
+                <label for="sel-estudiante">Estudiante</label>
+                <select id="sel-estudiante"></select>
+            </div>
+            <div>
+                <label for="sel-curso">Curso</label>
+                <select id="sel-curso"></select>
+            </div>
+            <button type="button" class="btn primario" id="btn-inscribir">Inscribir</button>
+        </div>
+    </section>
+
+    <section>
+        <div class="tab-lista" role="tablist">
+            <button class="tab activa" data-tab="estudiantes" role="tab">Estudiantes</button>
+            <button class="tab" data-tab="cursos" role="tab">Cursos</button>
+            <button class="tab" data-tab="inscripciones" role="tab">Inscripciones</button>
+        </div>
+
+        <div class="tab-panel" id="tab-estudiantes">
+            <table>
+                <thead><tr><th>Matrícula</th><th>Nombre</th><th>Grupo</th><th class="num">Cursos</th></tr></thead>
+                <tbody id="tbody-estudiantes"></tbody>
+            </table>
+            <p class="vacio" id="vacio-estudiantes">Aún no hay estudiantes. Regístralos con el formulario de arriba.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-cursos" hidden>
+            <table>
+                <thead><tr><th>Clave</th><th>Nombre del curso</th><th class="num">Inscritos</th></tr></thead>
+                <tbody id="tbody-cursos"></tbody>
+            </table>
+            <p class="vacio" id="vacio-cursos">Aún no hay cursos. Registra el primero con el formulario de arriba.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-inscripciones" hidden>
+            <table>
+                <thead><tr><th>Estudiante</th><th>Curso</th></tr></thead>
+                <tbody id="tbody-inscripciones"></tbody>
+            </table>
+            <p class="vacio" id="vacio-inscripciones">Todavía no hay inscripciones. Registra un estudiante y un curso para inscribirlo.</p>
+        </div>
+    </section>
+</main>
+
+<div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+<footer class="estado" id="estado"></footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
