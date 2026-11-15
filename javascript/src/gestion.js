@@ -132,4 +132,27 @@ export class GestorAcademico {
     calificacionesDe(matricula, clave) {
         return [...(this.calificaciones.get(`${matricula}|${clave}`)?.values() ?? [])];
     }
+
+    //Captura muchas calificaciones de una vez. Cada elemento es { matricula, clave, evaluacion, valor }.
+    //No se detiene en el primer error: guarda las válidas y regresa qué filas fallaron y por qué.
+    procesarCalificaciones(lista) {
+        if (!Array.isArray(lista)) {
+            throw new ValidacionError('Se esperaba una lista de calificaciones');
+        }
+        const exitosas = [];
+        const errores = [];
+        lista.forEach((dato, i) => {
+            try {
+                if (dato === null || typeof dato !== 'object') {
+                    throw new ValidacionError('La fila no tiene datos de calificación');
+                }
+                const { matricula, clave, evaluacion, valor } = dato;
+                exitosas.push(this.capturarCalificacion(matricula, clave, evaluacion, valor));
+            } catch (error) {
+                if (!(error instanceof ValidacionError)) throw error;
+                errores.push({ fila: i + 1, dato, mensaje: error.message });
+            }
+        });
+        return { exitosas, errores };
+    }
 }
