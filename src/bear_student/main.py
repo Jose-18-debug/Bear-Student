@@ -1,8 +1,10 @@
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox
+from bear_student.domain.averages import ServicioPromedios
 from bear_student.domain.evaluations import ServicioEvaluaciones
 from bear_student.domain.students_courses import SistemaEscolar
+from bear_student.ui.averages_view import PromediosView, formato
 from bear_student.ui.evaluations_view import EvaluacionesView
 from bear_student.ui.widgets import BotonInvierno, PestanaDesplazable
 from bear_student.ui.theme import (
@@ -32,6 +34,7 @@ class Aplicacion(tk.Tk):
             lambda clave: clave in self.sistema.cursos,
             self.sistema.estudiantes_inscritos,
         )
+        self.servicio_promedios = ServicioPromedios(self.sistema, self.servicio_evaluaciones)
         self._configurar_estilos()
         self._crear_interfaz()
 
@@ -192,7 +195,7 @@ class Aplicacion(tk.Tk):
         self.tabla_cur = self._crear_tabla(
             "Cursos",
             [("clave", "Clave", 140, "w"), ("nombre", "Nombre del curso", 300, "w"),
-             ("inscritos", "Inscritos", 90, "e")],
+             ("inscritos", "Inscritos", 90, "e"), ("promedio", "Promedio", 100, "e")],
             "Aún no hay cursos. Registra el primero con el formulario de arriba.")
         self.tabla_ins = self._crear_tabla(
             "Inscripciones",
@@ -204,6 +207,15 @@ class Aplicacion(tk.Tk):
             servicio=self.servicio_evaluaciones,
             fuente=self._f(TEXTO),
         )
+        self.vista_promedios = PromediosView(
+            self.pestanas,
+            self.sistema,
+            self.servicio_promedios,
+            fuente=self._f(TEXTO),
+        )
+        # Las notas se capturan en otra pestaña: al cambiar de pestaña se
+        # recalculan los promedios para que siempre estén al día.
+        self.pestanas.bind("<<NotebookTabChanged>>", lambda _e: self._actualizar_promedios())
         self.actualizar()
 
     def _panel(self, parent, titulo):
@@ -312,18 +324,24 @@ class Aplicacion(tk.Tk):
 
         self._llenar(self.tabla_est, [(e.matricula, e.nombre, e.grupo, len(s.inscripciones[e.matricula]))
                                       for e in s.estudiantes.values()])
-        self._llenar(self.tabla_cur, [(c.clave, c.nombre,
-                                       sum(c.clave in cl for cl in s.inscripciones.values()))
-                                      for c in s.cursos.values()])
         self._llenar(self.tabla_ins, [(s.estudiantes[m].nombre, s.cursos[k].nombre)
                                       for m, claves in s.inscripciones.items() for k in sorted(claves)])
 
         self.btn_inscribir.habilitar(bool(s.estudiantes) and bool(s.cursos))
         self.vista_evaluaciones.actualizar()
+        self._actualizar_promedios()
 
         total_ins = sum(len(v) for v in s.inscripciones.values())
         self.estado.configure(
             text=f"Estudiantes: {len(s.estudiantes)}     Cursos: {len(s.cursos)}     Inscripciones: {total_ins}")
+
+
+    def _actualizar_promedios(self):
+        resumen = {c.clave: c for c in self.servicio_promedios.promedios_de_cursos()}
+        self._llenar(self.tabla_cur, [(c.clave, c.nombre, resumen[c.clave].inscritos,
+                                       formato(resumen[c.clave].promedio))
+                                      for c in self.sistema.cursos.values()])
+        self.vista_promedios.actualizar()
 
 
 if __name__ == "__main__":
