@@ -12,6 +12,15 @@ class Evaluacion:
     calificacion_maxima: float
 
 
+def a_numero(valor):
+    """Convierte texto o número a float; acepta coma decimal ("8,5")."""
+    if isinstance(valor, bool):
+        raise ValueError("No es un número.")
+    if isinstance(valor, str):
+        valor = valor.strip().replace(",", ".")
+    return float(valor)
+
+
 class ServicioEvaluaciones:
     """Mantiene evaluaciones y notas sin encargarse de la interfaz gráfica."""
 
@@ -28,7 +37,7 @@ class ServicioEvaluaciones:
         if not nombre:
             raise ValueError("Escribe el nombre de la evaluación.")
         try:
-            maxima = float(calificacion_maxima)
+            maxima = a_numero(calificacion_maxima)
         except (TypeError, ValueError):
             raise ValueError("La calificación máxima debe ser un número.")
         if not math.isfinite(maxima) or maxima <= 0:
@@ -68,7 +77,7 @@ class ServicioEvaluaciones:
                     f"La matrícula {matricula} no está inscrita en el curso."
                 )
             try:
-                nota = float(valor)
+                nota = a_numero(valor)
             except (TypeError, ValueError):
                 raise ValueError(f"La calificación de {matricula} debe ser numérica.")
             if (
