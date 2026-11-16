@@ -26,7 +26,7 @@ import java.util.Set;
 /**
  * Interfaz gráfica (Swing) de la Parte 1: estudiantes, cursos e inscripciones.
  * No contiene lógica de negocio: solo llama a RegistroAcademico y muestra el resultado.
- * Todo está en un archivo (las clases de apoyo son internas y estáticas).
+ * To do está en un archivo (las clases de apoyo son internas y estáticas).
  */
 public class VentanaPrincipal extends JFrame {
 
@@ -50,7 +50,7 @@ public class VentanaPrincipal extends JFrame {
     // Swing mide las fuentes en píxeles, por eso se usan los tamaños de la columna "Web"
     // de la guía de diseño (se ven igual que los 11 pt de Tkinter).
     static final int TITULO = 24, SUBTITULO = 18, TEXTO = 14, BOTON = 14, ENC_TABLA = 13, CELDA = 13, NOTA = 12;
-    static final int ALTO_LOGO = 64;
+    static final int ALTO_LOGO = 56;
 
     static final String FAMILIA = elegirFamilia();
 
@@ -70,6 +70,7 @@ public class VentanaPrincipal extends JFrame {
 
     // ---------- Estado de la ventana ----------
     private final RegistroAcademico registro = new RegistroAcademico();   // aquí vive todo el estado
+    private final RegistroCalificaciones calificaciones = new RegistroCalificaciones(registro);   // Parte 2
 
     private final Campo matricula = new Campo();
     private final Campo nombre = new Campo();
@@ -88,11 +89,14 @@ public class VentanaPrincipal extends JFrame {
         super("Bear Student · Administración de estudiantes y cursos");
         configurarAspecto();
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(900, 800);
-        setMinimumSize(new Dimension(800, 700));
+        // Tamaño inicial: el que quepa en la pantalla (sin la barra de tareas); luego arranca maximizada
+        Rectangle pantalla = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+        setSize(Math.min(1000, pantalla.width), Math.min(820, pantalla.height));
+        setMinimumSize(new Dimension(640, 480));
         crearInterfaz();
         actualizar();
         setLocationRelativeTo(null);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
     }
 
     private void configurarAspecto() {
@@ -118,7 +122,7 @@ public class VentanaPrincipal extends JFrame {
         JLabel izquierda = logo != null ? new JLabel(logo) : new JLabel("Bear Student");
         izquierda.setFont(fuente(TITULO, true));
         izquierda.setForeground(AZUL_INVIERNO);
-        izquierda.setBorder(new EmptyBorder(16, 24, 16, 24));
+        izquierda.setBorder(new EmptyBorder(10, 24, 10, 24));
         JLabel derecha = new JLabel("<html><div style='text-align:right'>Registro de estudiantes,<br>cursos e inscripciones</div></html>");
         derecha.setFont(fuente(TEXTO, false));
         derecha.setForeground(GRIS_PIZARRA);
@@ -138,11 +142,11 @@ public class VentanaPrincipal extends JFrame {
         estado.setBackground(GRIS_ESCARCHA);
         estado.setForeground(GRIS_PIZARRA);
         estado.setFont(fuente(NOTA, false));
-        estado.setBorder(new EmptyBorder(8, 16, 8, 16));
+        estado.setBorder(new EmptyBorder(6, 16, 6, 16));
         add(estado, BorderLayout.SOUTH);
 
         // Formularios de estudiante y curso, lado a lado
-        JPanel formularios = new JPanel(new GridLayout(1, 2, 16, 0));
+        JPanel formularios = new JPanel(new GridLayout(1, 2, 12, 0));
         formularios.setOpaque(false);
         formularios.add(tarjeta("Registrar estudiante", formulario(
                 new String[]{"Matrícula", "Nombre", "Grupo"},
@@ -158,9 +162,9 @@ public class VentanaPrincipal extends JFrame {
         arriba.setLayout(new BoxLayout(arriba, BoxLayout.Y_AXIS));
         arriba.setOpaque(false);
         arriba.add(formularios);
-        arriba.add(Box.createVerticalStrut(16));
+        arriba.add(Box.createVerticalStrut(12));
         arriba.add(tarjeta("Inscribir estudiante en un curso", crearPanelInscribir()));
-        arriba.add(Box.createVerticalStrut(16));
+        arriba.add(Box.createVerticalStrut(12));
 
         // Pestañas con las tablas
         tablaEstudiantes = new PanelTabla(
@@ -182,16 +186,38 @@ public class VentanaPrincipal extends JFrame {
         pestanas.setUI(new PestanasUI());
         pestanas.setFont(fuente(BOTON, true));
         pestanas.setBackground(NIEVE);
+        pestanas.setPreferredSize(new Dimension(100, 330));
         pestanas.addTab("Estudiantes", tablaEstudiantes);
         pestanas.addTab("Cursos", tablaCursos);
         pestanas.addTab("Inscripciones", tablaInscripciones);
 
-        JPanel centro = new JPanel(new BorderLayout());
-        centro.setOpaque(false);
-        centro.setBorder(new EmptyBorder(16, 16, 16, 16));
-        centro.add(arriba, BorderLayout.NORTH);
-        centro.add(pestanas, BorderLayout.CENTER);
-        add(centro, BorderLayout.CENTER);
+        // Página de estudiantes y cursos: si la ventana es baja, se puede deslizar hacia abajo
+        PaginaScrollable pagina = new PaginaScrollable();
+        pagina.setBorder(new EmptyBorder(12, 12, 12, 12));
+        pagina.add(arriba, BorderLayout.NORTH);
+        pagina.add(pestanas, BorderLayout.CENTER);
+        JScrollPane paginaEstudiantes = new JScrollPane(pagina,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        paginaEstudiantes.setBorder(BorderFactory.createEmptyBorder());
+        paginaEstudiantes.getViewport().setBackground(NIEVE);
+        paginaEstudiantes.getVerticalScrollBar().setUnitIncrement(16);
+
+        // Pestañas principales: una por cada parte del equipo (aquí van la Parte 1 y la Parte 2)
+        PanelCalificaciones panelCalificaciones = new PanelCalificaciones(registro, calificaciones);
+        JTabbedPane principal = new JTabbedPane();
+        principal.setUI(new PestanasUI());
+        principal.setFont(fuente(BOTON, true));
+        principal.setBackground(NIEVE);
+        principal.addTab("Estudiantes y cursos", paginaEstudiantes);
+        principal.addTab("Calificaciones", panelCalificaciones);
+        principal.addChangeListener(e -> {
+            if (principal.getSelectedComponent() == panelCalificaciones) panelCalificaciones.refrescar();
+        });
+        JPanel marco = new JPanel(new BorderLayout());
+        marco.setOpaque(false);
+        marco.setBorder(new EmptyBorder(8, 8, 8, 8));
+        marco.add(principal, BorderLayout.CENTER);
+        add(marco, BorderLayout.CENTER);
     }
 
     private JPanel crearPanelInscribir() {
@@ -220,14 +246,14 @@ public class VentanaPrincipal extends JFrame {
         return cuerpo;
     }
 
-    private static void estilizarCombo(JComboBox<Opcion> combo) {
+    static void estilizarCombo(JComboBox<?> combo) {
         combo.setFont(fuente(TEXTO, false));
         combo.setBackground(BLANCO);
         combo.setForeground(GRIS_CARBON);
-        combo.setPreferredSize(new Dimension(200, 36));
+        combo.setPreferredSize(new Dimension(200, 32));
     }
 
-    private static JLabel etiqueta(String texto) {
+    static JLabel etiqueta(String texto) {
         JLabel l = new JLabel(texto);
         l.setFont(fuente(TEXTO, false));
         l.setForeground(GRIS_CARBON);
@@ -235,10 +261,10 @@ public class VentanaPrincipal extends JFrame {
     }
 
     /** Tarjeta blanca con borde azul escarcha y un título. */
-    private static JPanel tarjeta(String titulo, JComponent cuerpo) {
-        JPanel p = new JPanel(new BorderLayout(0, 8));
+    static JPanel tarjeta(String titulo, JComponent cuerpo) {
+        JPanel p = new JPanel(new BorderLayout(0, 6));
         p.setBackground(BLANCO);
-        p.setBorder(new CompoundBorder(new LineBorder(AZUL_ESCARCHA, 1), new EmptyBorder(16, 16, 16, 16)));
+        p.setBorder(new CompoundBorder(new LineBorder(AZUL_ESCARCHA, 1), new EmptyBorder(12, 12, 12, 12)));
         JLabel t = new JLabel(titulo);
         t.setFont(fuente(SUBTITULO, true));
         t.setForeground(AZUL_INVIERNO);
@@ -256,10 +282,10 @@ public class VentanaPrincipal extends JFrame {
         for (int i = 0; i < etiquetas.length; i++) {
             gc.gridy = i;
             gc.gridx = 0; gc.weightx = 0; gc.fill = GridBagConstraints.NONE;
-            gc.insets = new Insets(8, 0, 8, 16);
+            gc.insets = new Insets(5, 0, 5, 12);
             cuerpo.add(etiqueta(etiquetas[i]), gc);
             gc.gridx = 1; gc.weightx = 1; gc.fill = GridBagConstraints.HORIZONTAL;
-            gc.insets = new Insets(8, 0, 8, 0);
+            gc.insets = new Insets(5, 0, 5, 0);
             cuerpo.add(campos[i], gc);
         }
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -268,7 +294,7 @@ public class VentanaPrincipal extends JFrame {
         botones.add(Box.createHorizontalStrut(8));
         botones.add(new BotonRedondo("Limpiar", false, () -> limpiar(campos)));
         gc.gridx = 0; gc.gridy = etiquetas.length; gc.gridwidth = 2;
-        gc.weightx = 0; gc.fill = GridBagConstraints.NONE; gc.insets = new Insets(8, 0, 0, 0);
+        gc.weightx = 0; gc.fill = GridBagConstraints.NONE; gc.insets = new Insets(6, 0, 0, 0);
         cuerpo.add(botones, gc);
         // Fila de relleno: empuja el contenido hacia arriba para que ambos formularios queden alineados
         gc.gridy = etiquetas.length + 1; gc.weighty = 1; gc.fill = GridBagConstraints.VERTICAL;
@@ -350,7 +376,7 @@ public class VentanaPrincipal extends JFrame {
         JOptionPane.showMessageDialog(this, mensaje, titulo, tipo);
     }
 
-    private static void limpiar(Campo[] campos) {
+    static void limpiar(Campo[] campos) {
         for (Campo c : campos) {
             c.setText("");
             c.setInvalido(false);
@@ -359,7 +385,7 @@ public class VentanaPrincipal extends JFrame {
     }
 
     /** Marca en rojo los campos vacíos (o el primero si ninguno está vacío) y manda el foco ahí. */
-    private static void marcarError(Campo[] campos) {
+    static void marcarError(Campo[] campos) {
         List<Campo> vacios = new ArrayList<>();
         for (Campo c : campos) if (c.getText().trim().isEmpty()) vacios.add(c);
         List<Campo> marcados = vacios.isEmpty() ? List.of(campos[0]) : vacios;
@@ -413,7 +439,7 @@ public class VentanaPrincipal extends JFrame {
     }
 
     /** Rellena el combo y conserva la selección anterior si todavía existe. */
-    private static void llenarCombo(JComboBox<Opcion> combo, List<Opcion> opciones) {
+    static void llenarCombo(JComboBox<Opcion> combo, List<Opcion> opciones) {
         Opcion previa = (Opcion) combo.getSelectedItem();
         combo.removeAllItems();
         for (Opcion o : opciones) combo.addItem(o);
@@ -460,7 +486,7 @@ public class VentanaPrincipal extends JFrame {
 
         private void pintarBorde() {
             Color color = invalido ? ROJO_ERROR : (enfocado ? AZUL_GLACIAR : GRIS_BORDE);
-            setBorder(new CompoundBorder(new LineBorder(color, 1), new EmptyBorder(7, 8, 7, 8)));
+            setBorder(new CompoundBorder(new LineBorder(color, 1), new EmptyBorder(5, 8, 5, 8)));
         }
     }
 
@@ -479,7 +505,7 @@ public class VentanaPrincipal extends JFrame {
             setRolloverEnabled(true);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             FontMetrics fm = getFontMetrics(getFont());
-            setPreferredSize(new Dimension(fm.stringWidth(texto) + 48, 36));
+            setPreferredSize(new Dimension(fm.stringWidth(texto) + 48, 32));
             addActionListener(e -> accion.run());
             addFocusListener(new FocusAdapter() {
                 @Override public void focusGained(FocusEvent e) { repaint(); }
@@ -544,7 +570,7 @@ public class VentanaPrincipal extends JFrame {
                 @Override public Class<?> getColumnClass(int col) { return tipos[col]; }
             };
             JTable tabla = new JTable(modelo);
-            tabla.setRowHeight(32);
+            tabla.setRowHeight(28);
             tabla.setShowGrid(false);
             tabla.setIntercellSpacing(new Dimension(0, 0));
             tabla.setFillsViewportHeight(true);
@@ -561,6 +587,7 @@ public class VentanaPrincipal extends JFrame {
                 public Component getTableCellRendererComponent(JTable t, Object valor, boolean seleccionada,
                                                                boolean foco, int fila, int col) {
                     super.getTableCellRendererComponent(t, valor, seleccionada, false, fila, col);
+                    if (valor instanceof Double) setText(String.format(java.util.Locale.US, "%.2f", valor));
                     setFont(fuente(CELDA, false));
                     setForeground(GRIS_CARBON);
                     setBackground(seleccionada ? AZUL_HIELO : (fila % 2 == 0 ? BLANCO : AZUL_NIEBLA));
@@ -572,6 +599,7 @@ public class VentanaPrincipal extends JFrame {
             tabla.setDefaultRenderer(Object.class, celdas);
             tabla.setDefaultRenderer(String.class, celdas);
             tabla.setDefaultRenderer(Integer.class, celdas);
+            tabla.setDefaultRenderer(Double.class, celdas);
 
             tabla.getTableHeader().setReorderingAllowed(false);
             tabla.getTableHeader().setDefaultRenderer(new DefaultTableCellRenderer() {
@@ -583,7 +611,7 @@ public class VentanaPrincipal extends JFrame {
                     setForeground(AZUL_NOCHE);
                     setFont(fuente(ENC_TABLA, true));
                     setBorder(new EmptyBorder(8, 8, 8, 8));
-                    setHorizontalAlignment(t.getColumnClass(col) == Integer.class ? RIGHT : LEFT);
+                    setHorizontalAlignment(Number.class.isAssignableFrom(t.getColumnClass(col)) ? RIGHT : LEFT);
                     return this;
                 }
             });
@@ -659,6 +687,25 @@ public class VentanaPrincipal extends JFrame {
         protected void paintFocusIndicator(Graphics g, int tabPlacement, Rectangle[] rects, int tabIndex,
                                            Rectangle iconRect, Rectangle textRect, boolean isSelected) {
             // sin rectángulo punteado de foco
+        }
+    }
+
+    /** Panel que se ajusta al ancho de la ventana y, si la ventana es baja, se puede deslizar hacia abajo. */
+    static class PaginaScrollable extends JPanel implements Scrollable {
+        PaginaScrollable() {
+            super(new BorderLayout());
+            setOpaque(false);
+        }
+
+        @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
+        @Override public int getScrollableUnitIncrement(Rectangle area, int orientacion, int direccion) { return 24; }
+        @Override public int getScrollableBlockIncrement(Rectangle area, int orientacion, int direccion) {
+            return orientacion == SwingConstants.VERTICAL ? area.height : area.width;
+        }
+        @Override public boolean getScrollableTracksViewportWidth() { return true; }
+        /** Si la ventana es más alta que el contenido, lo estira; si es más baja, deja que se deslice. */
+        @Override public boolean getScrollableTracksViewportHeight() {
+            return getParent() instanceof JViewport vp && vp.getHeight() > getPreferredSize().height;
         }
     }
 
