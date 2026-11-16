@@ -1,0 +1,842 @@
+<!-- ARCHIVO GENERADO por scripts/empaquetar.js. No lo edites a mano: cambia src/ y ejecuta npm run empaquetar -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bear Student · Estudiantes, cursos y calificaciones</title>
+    <!-- Nunito desde Google Fonts; si no carga, el navegador usa Segoe UI o Arial -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
+    <style>
+:root {
+    --azul-hielo: #A8D8F0; --azul-escarcha: #D4E9F7; --azul-niebla: #EAF4FB; --azul-glaciar: #5FA8D3;
+    --azul-invierno: #2E6FA7; --azul-profundo: #255C8E; --azul-noche: #1B4568;
+    --nieve: #F7FAFC; --blanco: #FFFFFF; --gris-escarcha: #EDF1F5; --gris-borde: #D5DDE5;
+    --gris-acero: #8A99A8; --gris-pizarra: #5C6B7A; --gris-carbon: #1F2D3A; --error: #D9534F;
+    --fondo-logo: #FFFFFF; /* si el fondo de tu logo no es blanco, pon aquí su color */
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { display: flex; flex-direction: column; min-height: 100vh; background: var(--nieve);
+    color: var(--gris-carbon); font: 14px/1.4 'Nunito', 'Segoe UI', Arial, sans-serif; }
+
+/* Barra superior y logo recortado (misma zona que recorta la versión de Python: 5%-95% ancho, 24%-78% alto).
+   Asume un logo cuadrado; si no lo es, cambia 5/3 por (ancho / alto) × 1.667 */
+.barra { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: var(--fondo-logo); }
+.logo { height: 64px; aspect-ratio: 5 / 3; background: url('src/ui/img/logo.png') 50% 52.17% / 111.11% auto no-repeat; }
+.barra-texto { margin: 0; text-align: right; color: var(--gris-pizarra); }
+.linea { height: 3px; background: var(--azul-hielo); }
+
+main { flex: 1; width: 100%; max-width: 960px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.formularios { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .formularios { grid-template-columns: 1fr; } }
+
+.panel { background: var(--blanco); border: 1px solid var(--azul-escarcha); border-radius: 8px; padding: 16px; }
+h2 { margin: 0 0 8px; font-size: 18px; font-weight: 700; color: var(--azul-invierno); }
+label { display: block; margin: 12px 0 4px; }
+input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--gris-borde); border-radius: 8px;
+    background: var(--blanco); color: var(--gris-carbon); font: inherit; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--azul-glaciar); outline-offset: 0; }
+input.invalid, textarea.invalid { border-color: var(--error); outline-color: var(--error); }
+.botones { display: flex; gap: 8px; margin-top: 16px; }
+textarea { resize: vertical; font-family: Consolas, 'Courier New', monospace; font-size: 13px; }
+.nota { margin: 8px 0; color: var(--gris-pizarra); font-size: 13px; }
+.nota:empty { display: none; }
+.lote-errores { margin: 12px 0 0; padding-left: 20px; color: #A12622; }
+.lote-errores:empty { display: none; }
+.lote-errores li { margin: 4px 0; }
+.fila-inscribir { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end; }
+@media (max-width: 700px) { .fila-inscribir { grid-template-columns: 1fr; } }
+
+/* Botones: primario (relleno) y secundario (borde) con hover, presionado y deshabilitado */
+.btn { min-height: 36px; padding: 0 24px; border: 2px solid var(--azul-invierno); border-radius: 18px;
+    font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.primario { background: var(--azul-invierno); color: var(--blanco); }
+.primario:hover { background: var(--azul-profundo); border-color: var(--azul-profundo); }
+.primario:active { background: var(--azul-noche); border-color: var(--azul-noche); }
+.secundario { background: var(--blanco); color: var(--azul-invierno); }
+.secundario:hover { background: var(--azul-niebla); }
+.secundario:active { background: var(--azul-escarcha); }
+.btn:disabled { background: var(--gris-borde); border-color: var(--gris-borde); color: var(--gris-acero); cursor: not-allowed; }
+
+/* Pestañas */
+.tab-lista { display: flex; gap: 2px; }
+.tab { padding: 8px 16px; border: 1px solid var(--azul-escarcha); border-bottom: 3px solid transparent;
+    border-radius: 8px 8px 0 0; background: var(--azul-niebla); color: var(--gris-pizarra);
+    font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }.tab:hover { background: var(--azul-escarcha); }
+.tab.activa { background: var(--blanco); color: var(--azul-invierno); border-bottom-color: var(--azul-invierno); }
+.tab-panel { background: var(--blanco); border: 1px solid var(--azul-escarcha); padding: 8px; min-height: 180px; overflow-x: auto; }
+.tab-panel[hidden] { display: none; }
+
+/* Tablas */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--azul-escarcha); color: var(--azul-noche); text-align: left; padding: 8px; font-weight: 700; }
+td { padding: 6px 8px; height: 32px; }
+tbody tr:nth-child(even) { background: var(--azul-niebla); }
+tbody tr:hover { background: var(--azul-escarcha); }
+tbody tr.sel { background: var(--azul-hielo); }
+.num { text-align: right; }
+.vacio { margin: 0; padding: 32px 16px; text-align: center; color: var(--gris-pizarra); }
+.vacio[hidden] { display: none; }
+
+/* Aviso flotante (éxito / error) y barra de estado */
+.aviso { position: fixed; right: 16px; bottom: 56px; max-width: 360px; padding: 10px 14px;
+    border: 1px solid; border-radius: 8px; font-weight: 600; }
+.aviso:empty { display: none; }
+.aviso.ok { background: #DDF1E8; color: #1F6B50; border-color: #3C9D7B; }
+.aviso.error { background: #FBE3E1; color: #A12622; border-color: var(--error); }
+.estado { background: var(--gris-escarcha); color: var(--gris-pizarra); font-size: 12px; padding: 8px 16px; white-space: pre; }
+</style>
+</head>
+<body>
+<header class="barra">
+    <div class="logo" role="img" aria-label="Bear Student"></div>
+    <p class="barra-texto">Registro de estudiantes, cursos,<br>evaluaciones y calificaciones</p>
+</header>
+<div class="linea"></div>
+
+<main>
+    <section class="formularios">
+        <form class="panel" id="form-estudiante" novalidate>
+            <h2>Registrar estudiante</h2>
+            <label for="matricula">Matrícula</label>
+            <input id="matricula" autocomplete="off">
+            <label for="nombre">Nombre</label>
+            <input id="nombre" autocomplete="off">
+            <label for="grupo">Grupo</label>
+            <input id="grupo" autocomplete="off">
+            <div class="botones">
+                <button type="submit" class="btn primario">Guardar estudiante</button>
+                <button type="button" class="btn secundario" id="limpiar-estudiante">Limpiar</button>
+            </div>
+        </form>
+
+        <form class="panel" id="form-curso" novalidate>
+            <h2>Registrar curso</h2>
+            <label for="clave">Clave</label>
+            <input id="clave" autocomplete="off">
+            <label for="nombre-curso">Nombre del curso</label>
+            <input id="nombre-curso" autocomplete="off">
+            <div class="botones">
+                <button type="submit" class="btn primario">Guardar curso</button>
+                <button type="button" class="btn secundario" id="limpiar-curso">Limpiar</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Inscribir estudiante en un curso</h2>
+        <div class="fila-inscribir">
+            <div>
+                <label for="sel-estudiante">Estudiante</label>
+                <select id="sel-estudiante"></select>
+            </div>
+            <div>
+                <label for="sel-curso">Curso</label>
+                <select id="sel-curso"></select>
+            </div>
+            <button type="button" class="btn primario" id="btn-inscribir">Inscribir</button>
+        </div>
+    </section>
+
+    <section class="formularios">
+        <form class="panel" id="form-evaluacion" novalidate>
+            <h2>Registrar evaluación</h2>
+            <label for="ev-curso">Curso</label>
+            <select id="ev-curso"></select>
+            <label for="ev-nombre">Nombre de la evaluación</label>
+            <input id="ev-nombre" autocomplete="off" placeholder="Parcial 1">
+            <label for="ev-ponderacion">Ponderación (%)</label>
+            <input id="ev-ponderacion" autocomplete="off" inputmode="decimal" placeholder="30">
+            <p class="nota" id="ev-disponible"></p>
+            <div class="botones">
+                <button type="submit" class="btn primario" id="btn-evaluacion">Guardar evaluación</button>
+                <button type="button" class="btn secundario" id="limpiar-evaluacion">Limpiar</button>
+            </div>
+        </form>
+
+        <form class="panel" id="form-calificacion" novalidate>
+            <h2>Capturar calificación</h2>
+            <label for="cal-estudiante">Estudiante</label>
+            <select id="cal-estudiante"></select>
+            <label for="cal-curso">Curso (solo los inscritos)</label>
+            <select id="cal-curso"></select>
+            <label for="cal-evaluacion">Evaluación</label>
+            <select id="cal-evaluacion"></select>
+            <label for="cal-valor">Calificación (0 a 10)</label>
+            <input id="cal-valor" autocomplete="off" inputmode="decimal" placeholder="8.5">
+            <div class="botones">
+                <button type="submit" class="btn primario" id="btn-calificacion">Guardar calificación</button>
+                <button type="button" class="btn secundario" id="limpiar-calificacion">Limpiar</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Procesar calificaciones de varios estudiantes</h2>
+        <p class="nota">Una calificación por línea: matrícula, clave del curso, evaluación, calificación (con punto decimal).</p>
+        <textarea id="lote" rows="5" spellcheck="false" placeholder="A001,MAT101,Parcial 1,8.5&#10;A002,MAT101,Parcial 1,9"></textarea>
+        <div class="botones">
+            <button type="button" class="btn primario" id="btn-lote">Procesar</button>
+            <button type="button" class="btn secundario" id="limpiar-lote">Limpiar</button>
+        </div>
+        <ul class="lote-errores" id="lote-errores"></ul>
+    </section>
+
+    <section class="panel">
+        <h2>Consultar calificaciones de un estudiante</h2>
+        <label for="con-estudiante">Estudiante</label>
+        <select id="con-estudiante"></select>
+        <p class="nota" id="con-resumen"></p>
+        <table>
+            <thead><tr><th>Curso</th><th>Evaluación</th><th class="num">Ponderación (%)</th><th class="num">Calificación</th><th class="num">Promedio del curso</th></tr></thead>
+            <tbody id="tbody-consulta"></tbody>
+        </table>
+        <p class="vacio" id="vacio-consulta">Este estudiante aún no tiene calificaciones.</p>
+    </section>
+
+    <section>
+        <div class="tab-lista" role="tablist">
+            <button class="tab activa" data-tab="estudiantes" role="tab">Estudiantes</button>
+            <button class="tab" data-tab="cursos" role="tab">Cursos</button>
+            <button class="tab" data-tab="inscripciones" role="tab">Inscripciones</button>
+            <button class="tab" data-tab="evaluaciones" role="tab">Evaluaciones</button>
+            <button class="tab" data-tab="calificaciones" role="tab">Calificaciones</button>
+            <button class="tab" data-tab="promedios" role="tab">Promedios por curso</button>
+            <button class="tab" data-tab="ranking" role="tab">Ranking</button>
+        </div>
+
+        <div class="tab-panel" id="tab-estudiantes">
+            <table>
+                <thead><tr><th>Matrícula</th><th>Nombre</th><th>Grupo</th><th class="num">Cursos</th></tr></thead>
+                <tbody id="tbody-estudiantes"></tbody>
+            </table>
+            <p class="vacio" id="vacio-estudiantes">Aún no hay estudiantes. Regístralos con el formulario de arriba.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-cursos" hidden>
+            <table>
+                <thead><tr><th>Clave</th><th>Nombre del curso</th><th class="num">Inscritos</th></tr></thead>
+                <tbody id="tbody-cursos"></tbody>
+            </table>
+            <p class="vacio" id="vacio-cursos">Aún no hay cursos. Registra el primero con el formulario de arriba.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-inscripciones" hidden>
+            <table>
+                <thead><tr><th>Estudiante</th><th>Curso</th></tr></thead>
+                <tbody id="tbody-inscripciones"></tbody>
+            </table>
+            <p class="vacio" id="vacio-inscripciones">Todavía no hay inscripciones. Registra un estudiante y un curso para inscribirlo.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-evaluaciones" hidden>
+            <table>
+                <thead><tr><th>Curso</th><th>Evaluación</th><th class="num">Ponderación (%)</th></tr></thead>
+                <tbody id="tbody-evaluaciones"></tbody>
+            </table>
+            <p class="vacio" id="vacio-evaluaciones">Aún no hay evaluaciones. Registra la primera eligiendo un curso.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-calificaciones" hidden>
+            <table>
+                <thead><tr><th>Estudiante</th><th>Curso</th><th>Evaluación</th><th class="num">Calificación</th></tr></thead>
+                <tbody id="tbody-calificaciones"></tbody>
+            </table>
+            <p class="vacio" id="vacio-calificaciones">Aún no hay calificaciones capturadas.</p>
+        </div>
+        <div class="tab-panel" id="tab-promedios" hidden>
+            <table>
+                <thead><tr><th>Clave</th><th>Curso</th><th class="num">Inscritos</th><th class="num">Promedio</th></tr></thead>
+                <tbody id="tbody-promedios"></tbody>
+            </table>
+            <p class="vacio" id="vacio-promedios">Aún no hay cursos.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-ranking" hidden>
+            <label for="orden-ranking">Orden</label>
+            <select id="orden-ranking">
+                <option value="desc">Mayor a menor promedio</option>
+                <option value="asc">Menor a mayor promedio</option>
+            </select>
+            <table>
+                <thead><tr><th class="num">#</th><th>Matrícula</th><th>Nombre</th><th>Grupo</th><th class="num">Promedio general</th></tr></thead>
+                <tbody id="tbody-ranking"></tbody>
+            </table>
+            <p class="vacio" id="vacio-ranking">Aún no hay estudiantes.</p>
+        </div>
+    </section>
+</main>
+
+<div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+<footer class="estado" id="estado"></footer>
+
+<script>
+(() => {
+'use strict';
+// ---- src/errores.js ----
+//Error propio de Bear Student, se lanza cuando un dato no cumple las reglas de negocio.
+class ValidacionError extends Error {
+    constructor(mensaje) {
+        super(mensaje);
+        this.name = 'ValidacionError';
+    }
+}
+
+// ---- src/validacion.js ----
+//Verifica que el valor sea un texto con contenido, no vacío ni solo espacios
+//Devuelve el texto sin espacios sobrantes, si no cumple, lanza ValidacionError con el mensaje dado
+function textoObligatorio(valor, mensaje) {
+    if (typeof valor !== 'string' || valor.trim() === '') {
+        throw new ValidacionError(mensaje);
+    }
+    return valor.trim();
+}
+
+//Verifica que el valor sea un número (o un texto con un número) dentro de [minimo, maximo]
+//Devuelve el número convertido, si no cumple, lanza ValidacionError con el mensaje dado
+function numeroEnRango(valor, minimo, maximo, mensaje) {
+    const texto = typeof valor === 'string' ? valor.trim() : valor;
+    const numero = texto === '' || texto === null || texto === undefined ? NaN : Number(texto);
+    if (!Number.isFinite(numero) || numero < minimo || numero > maximo) {
+        throw new ValidacionError(mensaje);
+    }
+    return numero;
+}
+
+// ---- src/modelo.js ----
+// Entidades básicas del sistema. Los nombres de campo deben ser iguales en Java y Python.
+class Estudiante {
+    constructor(matricula, nombre, grupo) {
+        this.matricula = matricula;
+        this.nombre = nombre;
+        this.grupo = grupo;
+    }
+}
+
+class Curso {
+    constructor(clave, nombre) {
+        this.clave = clave;
+        this.nombre = nombre;
+    }
+}
+
+class Inscripcion {
+    constructor(matricula, clave) {
+        this.matricula = matricula;
+        this.clave = clave;
+    }
+}
+
+//Una evaluación pertenece a un curso y vale un porcentaje (ponderacion) de la calificación final
+class Evaluacion {
+    constructor(clave, nombre, ponderacion) {
+        this.clave = clave;
+        this.nombre = nombre;
+        this.ponderacion = ponderacion;
+    }
+}
+
+//Calificación de 0 a 10 que obtuvo un estudiante en una evaluación de un curso
+class Calificacion {
+    constructor(matricula, clave, evaluacion, valor) {
+        this.matricula = matricula;
+        this.clave = clave;
+        this.evaluacion = evaluacion;
+        this.valor = valor;
+    }
+}
+
+// ---- src/gestion.js ----
+//Redondea a 2 decimales (igual en Java y Python para que los resultados coincidan)
+function redondear(numero) {
+    return Math.round(numero * 100) / 100;
+}
+
+class GestorAcademico {
+    constructor() {
+        this.estudiantes = new Map();          //matricula -> Estudiante
+        this.cursos = new Map();               //clave -> Curso
+        //Índices con Set para consultar rápido incluso con 50,000 estudiantes
+        this.cursosPorEstudiante = new Map();  //matricula -> Set de claves de curso
+        this.estudiantesPorCurso = new Map();  //clave -> Set de matrículas
+        this.evaluaciones = new Map();         //clave -> Map nombre -> Evaluacion
+        this.calificaciones = new Map();       //"matricula|clave" -> Map nombre de evaluación -> Calificacion
+    }
+
+    registrarEstudiante(matricula, nombre, grupo) {
+        const mat = textoObligatorio(matricula, 'La matrícula no puede estar vacía');
+        const nom = textoObligatorio(nombre, 'El nombre no puede estar vacío');
+        const gru = textoObligatorio(grupo, 'El grupo no puede estar vacío');
+        if (this.estudiantes.has(mat)) {
+            throw new ValidacionError(`Ya existe un estudiante con la matrícula ${mat}`);
+        }
+        const estudiante = new Estudiante(mat, nom, gru);
+        this.estudiantes.set(mat, estudiante);
+        this.cursosPorEstudiante.set(mat, new Set());
+        return estudiante;
+    }
+
+    registrarCurso(clave, nombre) {
+        const cla = textoObligatorio(clave, 'La clave no puede estar vacía');
+        const nom = textoObligatorio(nombre, 'El nombre no puede estar vacío');
+        if (this.cursos.has(cla)) {
+            throw new ValidacionError(`Ya existe un curso con la clave ${cla}`);
+        }
+        const curso = new Curso(cla, nom);
+        this.cursos.set(cla, curso);
+        this.estudiantesPorCurso.set(cla, new Set());
+        this.evaluaciones.set(cla, new Map());
+        return curso;
+    }
+
+    inscribir(matricula, clave) {
+        if (!this.estudiantes.has(matricula)) {
+            throw new ValidacionError(`El estudiante ${matricula} no existe`);
+        }
+        if (!this.cursos.has(clave)) {
+            throw new ValidacionError(`El curso ${clave} no existe`);
+        }
+        if (this.estaInscrito(matricula, clave)) {
+            throw new ValidacionError(`El estudiante ${matricula} ya está inscrito en el curso ${clave}`);
+        }
+        this.cursosPorEstudiante.get(matricula).add(clave);
+        this.estudiantesPorCurso.get(clave).add(matricula);
+        return new Inscripcion(matricula, clave);
+    }
+
+    //Las siguientes tres funciones serán necesarias para lo demás de la interfaz
+    estaInscrito(matricula, clave) {
+        const cursos = this.cursosPorEstudiante.get(matricula);
+        return cursos !== undefined && cursos.has(clave);
+    }
+
+    cursosDeEstudiante(matricula) {
+        return [...(this.cursosPorEstudiante.get(matricula) ?? [])];
+    }
+
+    estudiantesDeCurso(clave) {
+        return [...(this.estudiantesPorCurso.get(clave) ?? [])];
+    }
+
+    //La ponderación es el porcentaje que vale la evaluación; las de un curso no pueden sumar más de 100
+    registrarEvaluacion(clave, nombre, ponderacion) {
+        if (!this.cursos.has(clave)) {
+            throw new ValidacionError(`El curso ${clave} no existe`);
+        }
+        const nom = textoObligatorio(nombre, 'El nombre de la evaluación no puede estar vacío');
+        const pon = numeroEnRango(ponderacion, 0, 100, 'La ponderación debe ser un número entre 0 y 100');
+        if (pon === 0) {
+            throw new ValidacionError('La ponderación debe ser mayor que 0');
+        }
+        const delCurso = this.evaluaciones.get(clave);
+        if (delCurso.has(nom)) {
+            throw new ValidacionError(`El curso ${clave} ya tiene una evaluación llamada ${nom}`);
+        }
+        const suma = this.ponderacionTotal(clave);
+        if (suma + pon > 100 + 1e-9) {   //el margen evita errores de redondeo como 0.1 + 0.2
+            throw new ValidacionError(`Las ponderaciones del curso ${clave} sumarían ${suma + pon}%, el máximo es 100%`);
+        }
+        const evaluacion = new Evaluacion(clave, nom, pon);
+        delCurso.set(nom, evaluacion);
+        return evaluacion;
+    }
+
+    //Calificación de 0 a 10; solo para estudiantes inscritos y una sola vez por evaluación
+    capturarCalificacion(matricula, clave, nombreEvaluacion, valor) {
+        if (!this.estudiantes.has(matricula)) {
+            throw new ValidacionError(`El estudiante ${matricula} no existe`);
+        }
+        if (!this.cursos.has(clave)) {
+            throw new ValidacionError(`El curso ${clave} no existe`);
+        }
+        if (!this.estaInscrito(matricula, clave)) {
+            throw new ValidacionError(`El estudiante ${matricula} no está inscrito en el curso ${clave}`);
+        }
+        const nom = typeof nombreEvaluacion === 'string' ? nombreEvaluacion.trim() : nombreEvaluacion;
+        if (!this.evaluaciones.get(clave).has(nom)) {
+            throw new ValidacionError(`El curso ${clave} no tiene una evaluación llamada ${nom}`);
+        }
+        const val = numeroEnRango(valor, 0, 10, 'La calificación debe ser un número entre 0 y 10');
+        const llave = `${matricula}|${clave}`;
+        if (!this.calificaciones.has(llave)) {
+            this.calificaciones.set(llave, new Map());
+        }
+        const delEstudiante = this.calificaciones.get(llave);
+        if (delEstudiante.has(nom)) {
+            throw new ValidacionError(`El estudiante ${matricula} ya tiene calificación en ${nom} del curso ${clave}`);
+        }
+        const calificacion = new Calificacion(matricula, clave, nom, val);
+        delEstudiante.set(nom, calificacion);
+        return calificacion;
+    }
+
+    evaluacionesDeCurso(clave) {
+        return [...(this.evaluaciones.get(clave)?.values() ?? [])];
+    }
+
+    ponderacionTotal(clave) {
+        return this.evaluacionesDeCurso(clave).reduce((suma, e) => suma + e.ponderacion, 0);
+    }
+
+    //Calificaciones de un estudiante en un curso; las usará el cálculo del promedio final
+    calificacionesDe(matricula, clave) {
+        return [...(this.calificaciones.get(`${matricula}|${clave}`)?.values() ?? [])];
+    }
+
+    //Captura muchas calificaciones de una vez. Cada elemento es { matricula, clave, evaluacion, valor }.
+    //No se detiene en el primer error: guarda las válidas y regresa qué filas fallaron y por qué.
+    procesarCalificaciones(lista) {
+        if (!Array.isArray(lista)) {
+            throw new ValidacionError('Se esperaba una lista de calificaciones');
+        }
+        const exitosas = [];
+        const errores = [];
+        lista.forEach((dato, i) => {
+            try {
+                if (dato === null || typeof dato !== 'object') {
+                    throw new ValidacionError('La fila no tiene datos de calificación');
+                }
+                const { matricula, clave, evaluacion, valor } = dato;
+                exitosas.push(this.capturarCalificacion(matricula, clave, evaluacion, valor));
+            } catch (error) {
+                if (!(error instanceof ValidacionError)) throw error;
+                errores.push({ fila: i + 1, dato, mensaje: error.message });
+            }
+        });
+        return { exitosas, errores };
+    }
+
+    // ---- Persona 3: promedios y consultas ----
+
+    //Promedio final de un estudiante en un curso, de 0 a 10 con 2 decimales.
+    //Es ponderado: suma(valor * ponderacion) / suma(ponderaciones de las evaluaciones ya calificadas).
+    //Si todavía no tiene ninguna calificación en el curso regresa null (no es lo mismo que 0).
+    promedioFinal(matricula, clave) {
+        const pesos = this.evaluaciones.get(clave);
+        let suma = 0;
+        let peso = 0;
+        for (const cal of this.calificacionesDe(matricula, clave)) {
+            const ponderacion = pesos.get(cal.evaluacion).ponderacion;
+            suma += cal.valor * ponderacion;
+            peso += ponderacion;
+        }
+        return peso === 0 ? null : redondear(suma / peso);
+    }
+
+    //Promedio de un curso: media de los promedios finales de sus estudiantes que ya tienen calificaciones
+    promedioDeCurso(clave) {
+        const finales = this.estudiantesDeCurso(clave)
+            .map((matricula) => this.promedioFinal(matricula, clave))
+            .filter((promedio) => promedio !== null);
+        return finales.length === 0 ? null : redondear(finales.reduce((a, b) => a + b, 0) / finales.length);
+    }
+
+    //Promedio general de un estudiante: media de sus promedios finales por curso (solo cursos con calificaciones)
+    promedioGeneral(matricula) {
+        const finales = this.cursosDeEstudiante(matricula)
+            .map((clave) => this.promedioFinal(matricula, clave))
+            .filter((promedio) => promedio !== null);
+        return finales.length === 0 ? null : redondear(finales.reduce((a, b) => a + b, 0) / finales.length);
+    }
+
+    //Consulta las calificaciones de un estudiante, agrupadas por curso, con su promedio final y general.
+    //Regresa { estudiante, cursos: [{ clave, nombre, calificaciones: [{ evaluacion, ponderacion, valor }], promedioFinal }], promedioGeneral }
+    consultarEstudiante(matricula) {
+        const estudiante = this.estudiantes.get(typeof matricula === 'string' ? matricula.trim() : matricula);
+        if (estudiante === undefined) {
+            throw new ValidacionError(`El estudiante ${matricula} no existe`);
+        }
+        const cursos = this.cursosDeEstudiante(estudiante.matricula).map((clave) => ({
+            clave,
+            nombre: this.cursos.get(clave).nombre,
+            calificaciones: this.calificacionesDe(estudiante.matricula, clave).map((cal) => ({
+                evaluacion: cal.evaluacion,
+                ponderacion: this.evaluaciones.get(clave).get(cal.evaluacion).ponderacion,
+                valor: cal.valor,
+            })),
+            promedioFinal: this.promedioFinal(estudiante.matricula, clave),
+        }));
+        return { estudiante, cursos, promedioGeneral: this.promedioGeneral(estudiante.matricula) };
+    }
+
+    //Estudiantes ordenados por promedio general. Los que aún no tienen calificaciones quedan al final.
+    //Empates: por nombre. Regresa [{ matricula, nombre, grupo, promedio }]
+    estudiantesPorPromedio(descendente = true) {
+        const filas = [...this.estudiantes.values()].map((e) => ({
+            matricula: e.matricula, nombre: e.nombre, grupo: e.grupo, promedio: this.promedioGeneral(e.matricula),
+        }));
+        const factor = descendente ? -1 : 1;
+        return filas.sort((a, b) => {
+            if (a.promedio === null || b.promedio === null) {
+                return (a.promedio === null) - (b.promedio === null);   //los null siempre al final
+            }
+            return factor * (a.promedio - b.promedio) || a.nombre.localeCompare(b.nombre, 'es');
+        });
+    }
+
+    //Promedio de cada curso: [{ clave, nombre, inscritos, promedio }]
+    promediosPorCurso() {
+        return [...this.cursos.values()].map((c) => ({
+            clave: c.clave, nombre: c.nombre,
+            inscritos: this.estudiantesDeCurso(c.clave).length,
+            promedio: this.promedioDeCurso(c.clave),
+        }));
+    }
+}
+
+// ---- src/ui/app.js ----
+const gestor = new GestorAcademico();     // aquí vive todo el estado; la página solo lo muestra
+const $ = (id) => document.getElementById(id);
+const campos = {
+    estudiante: [$('matricula'), $('nombre'), $('grupo')],
+    curso: [$('clave'), $('nombre-curso')],
+    evaluacion: [$('ev-nombre'), $('ev-ponderacion')],
+    calificacion: [$('cal-valor')],
+};
+let temporizadorAviso;
+
+// Muestra un aviso verde (ok) o rojo (error) durante 4 segundos.
+function aviso(texto, tipo) {
+    const caja = $('aviso');
+    caja.textContent = texto;
+    caja.className = `aviso ${tipo}`;
+    clearTimeout(temporizadorAviso);
+    temporizadorAviso = setTimeout(() => { caja.textContent = ''; caja.className = 'aviso'; }, 4000);
+}
+
+// Marca en rojo los campos vacíos (o el primero si ninguno está vacío) y manda el foco ahí.
+function marcarError(lista) {
+    const vacios = lista.filter((c) => !c.value.trim());
+    const marcados = vacios.length ? vacios : lista.slice(0, 1);
+    marcados.forEach((c) => c.classList.add('invalid'));
+    marcados[0].focus();
+}
+
+function limpiar(lista) {
+    lista.forEach((c) => { c.value = ''; c.classList.remove('invalid'); });
+    lista[0].focus();
+}
+
+// Ejecuta una acción del gestor; solo atrapa los errores de validación y muestra su mensaje tal cual.
+function intentar(accion, mensajeOk, lista) {
+    try {
+        accion();
+        if (lista) limpiar(lista);
+        actualizar();
+        aviso(mensajeOk, 'ok');
+    } catch (error) {
+        if (!(error instanceof ValidacionError)) throw error;
+        if (lista) marcarError(lista);
+        aviso(error.message, 'error');
+    }
+}
+
+// Rellena una tabla; textContent evita que un nombre con < o > rompa la página.
+function llenarTabla(nombre, filas) {
+    $(`tbody-${nombre}`).replaceChildren(...filas.map((fila) => {
+        const tr = document.createElement('tr');
+        fila.forEach((valor) => {
+            const td = document.createElement('td');
+            td.textContent = valor;
+            if (typeof valor === 'number') td.className = 'num';
+            tr.append(td);
+        });
+        return tr;
+    }));
+    $(`vacio-${nombre}`).hidden = filas.length > 0;
+}
+
+// opciones: lista de [valor, texto]. Conserva la selección si sigue existiendo.
+function llenarSelect(select, opciones) {
+    const previo = select.value;
+    select.replaceChildren(...opciones.map(([valor, texto]) => new Option(texto, valor)));
+    if (opciones.some(([valor]) => valor === previo)) select.value = previo;
+}
+
+// Los selects de captura dependen uno del otro: estudiante -> sus cursos -> evaluaciones del curso.
+function actualizarSelectsCalificacion() {
+    const matricula = $('cal-estudiante').value;
+    llenarSelect($('cal-curso'), gestor.cursosDeEstudiante(matricula).map((clave) =>
+        [clave, `${clave} | ${gestor.cursos.get(clave).nombre}`]));
+    llenarSelect($('cal-evaluacion'), gestor.evaluacionesDeCurso($('cal-curso').value).map((ev) =>
+        [ev.nombre, `${ev.nombre} (${ev.ponderacion}%)`]));
+    $('btn-calificacion').disabled = $('cal-evaluacion').options.length === 0;
+}
+
+function mostrarPonderacionDisponible() {
+    const clave = $('ev-curso').value;
+    $('ev-disponible').textContent = clave
+        ? `Ponderación disponible en ${clave}: ${+(100 - gestor.ponderacionTotal(clave)).toFixed(2)}%`
+        : '';
+}
+
+// Muestra las calificaciones del estudiante elegido, agrupadas por curso, con sus promedios.
+function mostrarConsulta() {
+    const matricula = $('con-estudiante').value;
+    if (!matricula) {
+        $('con-resumen').textContent = '';
+        llenarTabla('consulta', []);
+        return;
+    }
+    const { cursos, promedioGeneral } = gestor.consultarEstudiante(matricula);
+    $('con-resumen').textContent = `Promedio general: ${promedioGeneral === null ? 'sin calificaciones' : promedioGeneral}`;
+    llenarTabla('consulta', cursos.flatMap((curso) =>
+        curso.calificaciones.map((c) => [curso.nombre, c.evaluacion, c.ponderacion, c.valor, curso.promedioFinal])));
+}
+
+function mostrarRanking() {
+    const descendente = $('orden-ranking').value === 'desc';
+    llenarTabla('ranking', gestor.estudiantesPorPromedio(descendente).map((e, i) =>
+        [i + 1, e.matricula, e.nombre, e.grupo, e.promedio === null ? '—' : e.promedio]));
+}
+
+// Vuelve a pintar todo desde el estado del gestor.
+function actualizar() {
+    const estudiantes = [...gestor.estudiantes.values()];
+    const cursos = [...gestor.cursos.values()];
+
+    llenarSelect($('sel-estudiante'), estudiantes.map((e) => [e.matricula, `${e.matricula} | ${e.nombre} (${e.grupo})`]));
+    llenarSelect($('sel-curso'), cursos.map((c) => [c.clave, `${c.clave} | ${c.nombre}`]));
+
+    llenarTabla('estudiantes', estudiantes.map((e) =>
+        [e.matricula, e.nombre, e.grupo, gestor.cursosDeEstudiante(e.matricula).length]));
+    llenarTabla('cursos', cursos.map((c) =>
+        [c.clave, c.nombre, gestor.estudiantesDeCurso(c.clave).length]));
+    const inscripciones = estudiantes.flatMap((e) =>
+        gestor.cursosDeEstudiante(e.matricula).map((clave) => [e.nombre, gestor.cursos.get(clave).nombre]));
+    llenarTabla('inscripciones', inscripciones);
+
+    llenarSelect($('ev-curso'), cursos.map((c) => [c.clave, `${c.clave} | ${c.nombre}`]));
+    llenarSelect($('cal-estudiante'), estudiantes.map((e) => [e.matricula, `${e.matricula} | ${e.nombre}`]));
+    actualizarSelectsCalificacion();
+    mostrarPonderacionDisponible();
+    $('btn-evaluacion').disabled = cursos.length === 0;
+
+    const evaluaciones = cursos.flatMap((c) =>
+        gestor.evaluacionesDeCurso(c.clave).map((ev) => [c.nombre, ev.nombre, ev.ponderacion]));
+    llenarTabla('evaluaciones', evaluaciones);
+    const calificaciones = estudiantes.flatMap((e) => gestor.cursosDeEstudiante(e.matricula).flatMap((clave) =>
+        gestor.calificacionesDe(e.matricula, clave).map((c) =>
+            [e.nombre, gestor.cursos.get(clave).nombre, c.evaluacion, c.valor])));
+    llenarTabla('calificaciones', calificaciones);
+
+    llenarSelect($('con-estudiante'), estudiantes.map((e) => [e.matricula, `${e.matricula} | ${e.nombre}`]));
+    mostrarConsulta();
+    llenarTabla('promedios', gestor.promediosPorCurso().map((c) =>
+        [c.clave, c.nombre, c.inscritos, c.promedio === null ? '—' : c.promedio]));
+    mostrarRanking();
+
+    $('btn-inscribir').disabled = estudiantes.length === 0 || cursos.length === 0;
+    $('estado').textContent =
+        `Estudiantes: ${estudiantes.length}     Cursos: ${cursos.length}     Inscripciones: ${inscripciones.length}` +
+        `     Evaluaciones: ${evaluaciones.length}     Calificaciones: ${calificaciones.length}`;
+}
+
+// ---- Eventos ----
+$('form-estudiante').addEventListener('submit', (e) => {
+    e.preventDefault();
+    intentar(() => gestor.registrarEstudiante($('matricula').value, $('nombre').value, $('grupo').value),
+        'Estudiante registrado.', campos.estudiante);
+});
+$('form-curso').addEventListener('submit', (e) => {
+    e.preventDefault();
+    intentar(() => gestor.registrarCurso($('clave').value, $('nombre-curso').value),
+        'Curso registrado.', campos.curso);
+});
+$('btn-inscribir').addEventListener('click', () =>
+    intentar(() => gestor.inscribir($('sel-estudiante').value, $('sel-curso').value), 'Inscripción realizada.'));
+$('form-evaluacion').addEventListener('submit', (e) => {
+    e.preventDefault();
+    intentar(() => gestor.registrarEvaluacion($('ev-curso').value, $('ev-nombre').value, $('ev-ponderacion').value),
+        'Evaluación registrada.', campos.evaluacion);
+});
+$('form-calificacion').addEventListener('submit', (e) => {
+    e.preventDefault();
+    intentar(() => gestor.capturarCalificacion($('cal-estudiante').value, $('cal-curso').value,
+        $('cal-evaluacion').value, $('cal-valor').value), 'Calificación guardada.', campos.calificacion);
+});
+$('cal-estudiante').addEventListener('change', actualizarSelectsCalificacion);
+$('cal-curso').addEventListener('change', actualizarSelectsCalificacion);
+$('ev-curso').addEventListener('change', mostrarPonderacionDisponible);
+$('con-estudiante').addEventListener('change', mostrarConsulta);
+$('orden-ranking').addEventListener('change', mostrarRanking);
+
+// Convierte el texto del lote en objetos para el gestor. Guarda el número de línea de cada uno
+// para que los errores digan en qué línea del cuadro de texto están.
+function leerLote(texto) {
+    const datos = [];
+    const lineas = [];
+    const erroresFormato = [];
+    texto.split(/\r?\n/).forEach((linea, i) => {
+        if (!linea.trim()) return;
+        const partes = linea.split(',').map((p) => p.trim());
+        if (partes.length !== 4) {
+            erroresFormato.push({ linea: i + 1, texto: linea,
+                mensaje: 'Debe tener 4 valores separados por coma (usa punto decimal, no coma)' });
+            return;
+        }
+        const [matricula, clave, evaluacion, valor] = partes;
+        datos.push({ matricula, clave, evaluacion, valor });
+        lineas.push({ linea: i + 1, texto: linea });
+    });
+    return { datos, lineas, erroresFormato };
+}
+
+$('btn-lote').addEventListener('click', () => {
+    const { datos, lineas, erroresFormato } = leerLote($('lote').value);
+    if (datos.length === 0 && erroresFormato.length === 0) {
+        $('lote').classList.add('invalid');
+        $('lote').focus();
+        aviso('Escribe al menos una calificación.', 'error');
+        return;
+    }
+    const { exitosas, errores } = gestor.procesarCalificaciones(datos);
+    const todos = [...erroresFormato,
+        ...errores.map((e) => ({ ...lineas[e.fila - 1], mensaje: e.mensaje }))].sort((a, b) => a.linea - b.linea);
+    $('lote-errores').replaceChildren(...todos.map((e) => {
+        const li = document.createElement('li');
+        li.textContent = `Línea ${e.linea} (${e.texto.trim()}): ${e.mensaje}`;
+        return li;
+    }));
+    if (todos.length === 0) $('lote').value = '';
+    actualizar();
+    aviso(`${exitosas.length} guardadas, ${todos.length} con error.`, todos.length ? 'error' : 'ok');
+});
+$('limpiar-lote').addEventListener('click', () => {
+    $('lote').value = '';
+    $('lote').classList.remove('invalid');
+    $('lote-errores').replaceChildren();
+    $('lote').focus();
+});
+$('lote').addEventListener('input', () => $('lote').classList.remove('invalid'));
+
+$('limpiar-estudiante').addEventListener('click', () => limpiar(campos.estudiante));
+$('limpiar-evaluacion').addEventListener('click', () => limpiar(campos.evaluacion));
+$('limpiar-calificacion').addEventListener('click', () => limpiar(campos.calificacion));
+$('limpiar-curso').addEventListener('click', () => limpiar(campos.curso));
+
+// Quita el rojo de un campo en cuanto el usuario vuelve a escribir.
+Object.values(campos).flat().forEach((c) => c.addEventListener('input', () => c.classList.remove('invalid')));
+
+// Pestañas: muestra solo el panel de la pestaña elegida.
+document.querySelectorAll('.tab').forEach((boton) => {
+    boton.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('activa', b === boton));
+        document.querySelectorAll('.tab-panel').forEach((p) => { p.hidden = p.id !== `tab-${boton.dataset.tab}`; });
+    });
+});
+
+// Seleccionar una fila de cualquier tabla (queda en azul hielo).
+document.querySelectorAll('tbody').forEach((cuerpo) => cuerpo.addEventListener('click', (e) => {
+    const fila = e.target.closest('tr');
+    if (!fila) return;
+    cuerpo.querySelectorAll('tr.sel').forEach((tr) => tr.classList.remove('sel'));
+    fila.classList.add('sel');
+}));
+
+actualizar();
+})();
+</script>
+</body>
+</html>
