@@ -1,5 +1,4 @@
 package bearstudent.logica;
-import bearstudent.dto.*;
 
 /**
  * Error de validación de Bear Student: un dato no cumple las reglas de negocio.
@@ -11,4 +10,3 @@ public class ValidacionException extends RuntimeException {
         super(mensaje);
     }
 }
-

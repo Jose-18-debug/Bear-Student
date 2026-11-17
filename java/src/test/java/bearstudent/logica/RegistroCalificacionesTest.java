@@ -5,6 +5,8 @@ import bearstudent.dto.Calificacion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -57,7 +59,7 @@ class RegistroCalificacionesTest {
         notas.registrarEvaluacion("MAT101", "Parcial 2");
         notas.capturarCalificacion("A001", "MAT101", "Parcial 1", 8.0);
         notas.capturarCalificacion("A001", "MAT101", "Parcial 2", 7.5);
-        assertEquals(java.util.List.of(
+        assertEquals(List.of(
                         new Calificacion("A001", "MAT101", "Parcial 1", 8.0),
                         new Calificacion("A001", "MAT101", "Parcial 2", 7.5)),
                 notas.consultarCalificaciones("A001"));

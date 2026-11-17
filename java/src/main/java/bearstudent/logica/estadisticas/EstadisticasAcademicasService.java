@@ -7,6 +7,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 
+/**
+ * Módulo de la Persona 4: clasifica a cada estudiante (aprobado, reprobado, en riesgo) y resume una lista.
+ * No sabe de dónde salen los promedios: los pide a una FuentePromediosPort.
+ */
 public class EstadisticasAcademicasService implements EstadisticasAcademicasUseCase {
     /** Promedio mínimo para aprobar. */
     static final double APROBATORIO = 7.0;

@@ -108,7 +108,3 @@ class EstadisticasAcademicasServiceTest {
         assertEquals(50.0, r.porcentajeAprobacion());
     }
 }
-
-
-
-

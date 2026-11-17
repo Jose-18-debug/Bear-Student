@@ -1,5 +1,6 @@
 package bearstudent.logica;
-import bearstudent.dto.*;
+
+import bearstudent.dto.Calificacion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,4 +73,3 @@ public final class ProcesadorLote {
         return new ResultadoLote(capturadas, errores);
     }
 }
-

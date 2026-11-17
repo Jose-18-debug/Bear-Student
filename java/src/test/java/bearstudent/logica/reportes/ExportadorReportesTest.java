@@ -68,7 +68,8 @@ class ExportadorReportesTest {
 
         Path csv = carpeta.resolve("reporte.CSV");
         ExportadorReportes.exportar(r, csv);
-        assertEquals("﻿" + ExportadorReportes.aCsv(r), Files.readString(csv, StandardCharsets.UTF_8));
+        assertEquals(ExportadorReportes.BOM + ExportadorReportes.aCsv(r), Files.readString(csv, StandardCharsets.UTF_8));
+        assertEquals((char) 0xFEFF, Files.readString(csv, StandardCharsets.UTF_8).charAt(0));
 
         ValidacionException e = assertThrows(ValidacionException.class,
                 () -> ExportadorReportes.exportar(r, carpeta.resolve("reporte.txt")));

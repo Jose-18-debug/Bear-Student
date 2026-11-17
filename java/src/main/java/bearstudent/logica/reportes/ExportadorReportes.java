@@ -22,6 +22,8 @@ import java.util.Map;
 public final class ExportadorReportes {
 
     private static final String FIN_CSV = "\r\n";   // fin de línea estándar de CSV (RFC 4180)
+    /** Marca BOM al inicio del CSV: hace que Excel lea bien los acentos (UTF-8). */
+    static final String BOM = String.valueOf((char) 0xFEFF);
 
     private ExportadorReportes() { }
 
@@ -87,8 +89,7 @@ public final class ExportadorReportes {
         if (nombre.endsWith(".json")) {
             Files.writeString(archivo, aJson(r), StandardCharsets.UTF_8);
         } else if (nombre.endsWith(".csv")) {
-            // El BOM al inicio hace que Excel lea bien los acentos (UTF-8)
-            Files.writeString(archivo, "﻿" + aCsv(r), StandardCharsets.UTF_8);
+            Files.writeString(archivo, BOM + aCsv(r), StandardCharsets.UTF_8);
         } else {
             throw new ValidacionException("El archivo debe terminar en .json o .csv");
         }

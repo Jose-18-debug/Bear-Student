@@ -1,5 +1,8 @@
 package bearstudent.logica;
-import bearstudent.dto.*;
+
+import bearstudent.dto.Calificacion;
+import bearstudent.dto.Curso;
+import bearstudent.dto.Estudiante;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -122,4 +125,3 @@ public class RegistroCalificaciones {
         return valor.trim();
     }
 }
-
