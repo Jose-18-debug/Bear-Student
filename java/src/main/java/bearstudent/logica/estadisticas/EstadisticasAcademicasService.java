@@ -1,5 +1,6 @@
 package bearstudent.logica.estadisticas;
 
+import bearstudent.dto.PromedioEstudiante;
 import bearstudent.logica.ValidacionException;
 
 import java.math.BigDecimal;
@@ -50,7 +51,7 @@ public class EstadisticasAcademicasService implements EstadisticasAcademicasUseC
      * Se clasifica con el promedio redondeado a 2 decimales, que es el que se ve en pantalla y en los reportes.
      * Así, un 6.9967 que se muestra como 7.00 cuenta como aprobado.
      */
-    private List<ClasificacionEstudiante> clasificar(List<FuentePromediosPort.PromedioEstudiante> lista) {
+    private List<ClasificacionEstudiante> clasificar(List<PromedioEstudiante> lista) {
         return lista.stream().map(p -> {
             Double prom = p.promedio();
             EstadoAcademico estado;

@@ -2,13 +2,16 @@ package bearstudent.logica.reportes;
 
 import bearstudent.dto.Curso;
 import bearstudent.dto.Estudiante;
+import bearstudent.dto.PromedioEstudiante;
 import bearstudent.logica.PromediosAcademicos;
 import bearstudent.logica.RegistroAcademico;
 import bearstudent.logica.ValidacionException;
 import bearstudent.logica.estadisticas.EstadisticasAcademicasService;
+import bearstudent.logica.estadisticas.EstadisticasAcademicasUseCase;
 import bearstudent.logica.estadisticas.EstadisticasAcademicasUseCase.ClasificacionEstudiante;
 import bearstudent.logica.estadisticas.EstadisticasAcademicasUseCase.ResumenEstadistico;
 import bearstudent.logica.estadisticas.FuentePromediosPort;
+import bearstudent.logica.estadisticas.PromediosAcademicosAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,38 +36,44 @@ public class GeneradorReportes {
 
     private final RegistroAcademico academico;
     private final PromediosAcademicos promedios;
+    /** Estadísticas conectadas a los promedios reales por medio de PromediosAcademicosAdapter. */
+    private final EstadisticasAcademicasUseCase estadisticas;
 
     public GeneradorReportes(RegistroAcademico academico, PromediosAcademicos promedios) {
         this.academico = academico;
         this.promedios = promedios;
+        this.estadisticas = new EstadisticasAcademicasService(new PromediosAcademicosAdapter(promedios));
     }
 
     /** Todos los estudiantes, con su promedio final. */
     public Reporte reporteGeneral() {
-        return armar(TipoReporte.GENERAL, "", "Reporte general", promedios.ordenarPorPromedio(true));
+        return new Reporte(TipoReporte.GENERAL, "", "Reporte general",
+                estadisticas.clasificarGlobales(), estadisticas.resumenGlobal());
     }
 
-    /** Estudiantes de un grupo, con su promedio final (el grupo no distingue mayúsculas). */
+    /** Estudiantes de un grupo (el grupo no distingue mayúsculas), con su promedio final. */
     public Reporte reportePorGrupo(String grupo) {
         String gru = grupo == null ? "" : grupo.trim();
         if (gru.isEmpty()) {
             throw new ValidacionException("El grupo no puede estar vacío");
         }
-        List<PromediosAcademicos.PromedioEstudiante> delGrupo = promedios.ordenarPorPromedio(true).stream()
+        List<PromedioEstudiante> delGrupo = promedios.ordenarPorPromedio(true).stream()
                 .filter(p -> p.grupo().equalsIgnoreCase(gru))
                 .toList();
         if (delGrupo.isEmpty()) {
             throw new ValidacionException("No hay estudiantes en el grupo " + gru);
         }
-        return armar(TipoReporte.GRUPO, gru, "Reporte del grupo " + gru, delGrupo);
+        EstadisticasAcademicasUseCase delGrupoStats = new EstadisticasAcademicasService(fuenteFija(delGrupo));
+        return new Reporte(TipoReporte.GRUPO, gru, "Reporte del grupo " + gru,
+                delGrupoStats.clasificarGlobales(), delGrupoStats.resumenGlobal());
     }
 
     /** Estudiantes inscritos en un curso, con su promedio en ese curso. */
     public Reporte reportePorAsignatura(String clave) {
         Curso curso = academico.buscarCurso(clave);
-        return armar(TipoReporte.ASIGNATURA, curso.getClave(),
+        return new Reporte(TipoReporte.ASIGNATURA, curso.getClave(),
                 "Reporte de " + curso.getClave() + " | " + curso.getNombre(),
-                promedios.ordenarPorPromedioEnCurso(curso.getClave(), true));
+                estadisticas.clasificarPorCurso(curso.getClave()), estadisticas.resumenPorCurso(curso.getClave()));
     }
 
     /** Grupos registrados, sin repetir y en orden alfabético (para llenar listas en la interfaz). */
@@ -76,19 +85,8 @@ public class GeneradorReportes {
         return new ArrayList<>(grupos);
     }
 
-    // ---------- Apoyo ----------
-
-    private static Reporte armar(TipoReporte tipo, String clave, String titulo,
-                                 List<PromediosAcademicos.PromedioEstudiante> lista) {
-        List<FuentePromediosPort.PromedioEstudiante> datos = lista.stream()
-                .map(p -> new FuentePromediosPort.PromedioEstudiante(p.matricula(), p.nombre(), p.grupo(), p.promedio()))
-                .toList();
-        EstadisticasAcademicasService estadisticas = new EstadisticasAcademicasService(fuenteFija(datos));
-        return new Reporte(tipo, clave, titulo, estadisticas.clasificarGlobales(), estadisticas.resumenGlobal());
-    }
-
-    /** Fuente que siempre entrega la misma lista: así se reutiliza la Persona 4 con cualquier grupo de estudiantes. */
-    private static FuentePromediosPort fuenteFija(List<FuentePromediosPort.PromedioEstudiante> datos) {
+    /** Fuente que siempre entrega la misma lista: el reporte por grupo la usa con los estudiantes ya filtrados. */
+    private static FuentePromediosPort fuenteFija(List<PromedioEstudiante> datos) {
         return new FuentePromediosPort() {
             @Override
             public List<PromedioEstudiante> obtenerPromediosGlobales() { return datos; }

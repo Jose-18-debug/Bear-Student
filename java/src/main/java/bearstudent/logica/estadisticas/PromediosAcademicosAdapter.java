@@ -1,10 +1,11 @@
 package bearstudent.logica.estadisticas;
-import bearstudent.logica.*;
-import bearstudent.dto.*;
 
+import bearstudent.dto.PromedioEstudiante;
+import bearstudent.logica.PromediosAcademicos;
 
 import java.util.List;
 
+/** Conecta las estadísticas (parte 4) con los promedios que calcula PromediosAcademicos (parte 3). */
 public class PromediosAcademicosAdapter implements FuentePromediosPort {
     private final PromediosAcademicos promedios;
 
@@ -14,19 +15,11 @@ public class PromediosAcademicosAdapter implements FuentePromediosPort {
 
     @Override
     public List<PromedioEstudiante> obtenerPromediosGlobales() {
-        return promedios.ordenarPorPromedio(true).stream()
-                .map(p -> new PromedioEstudiante(p.matricula(), p.nombre(), p.grupo(), p.promedio()))
-                .toList();
+        return promedios.ordenarPorPromedio(true);
     }
 
     @Override
     public List<PromedioEstudiante> obtenerPromediosPorCurso(String claveCurso) {
-        return promedios.ordenarPorPromedioEnCurso(claveCurso, true).stream()
-                .map(p -> new PromedioEstudiante(p.matricula(), p.nombre(), p.grupo(), p.promedio()))
-                .toList();
+        return promedios.ordenarPorPromedioEnCurso(claveCurso, true);
     }
 }
-
-
-
-

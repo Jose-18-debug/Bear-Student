@@ -1,4 +1,6 @@
 package bearstudent.logica.estadisticas;
+
+import bearstudent.dto.PromedioEstudiante;
 import bearstudent.logica.ValidacionException;
 
 import org.junit.jupiter.api.Test;
@@ -9,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class EstadisticasAcademicasServiceTest {
 
-    private static FuentePromediosPort portCon(List<FuentePromediosPort.PromedioEstudiante> globales,
-                                               List<FuentePromediosPort.PromedioEstudiante> porCurso) {
+    private static FuentePromediosPort portCon(List<PromedioEstudiante> globales,
+                                               List<PromedioEstudiante> porCurso) {
         return new FuentePromediosPort() {
             @Override
             public List<PromedioEstudiante> obtenerPromediosGlobales() { return globales; }
@@ -21,11 +23,11 @@ class EstadisticasAcademicasServiceTest {
 
     @Test
     void clasificacionFronteras() {
-        var p1 = new FuentePromediosPort.PromedioEstudiante("1","A","G1",6.99);
-        var p2 = new FuentePromediosPort.PromedioEstudiante("2","B","G1",7.0);
-        var p3 = new FuentePromediosPort.PromedioEstudiante("3","C","G1",7.5);
-        var p4 = new FuentePromediosPort.PromedioEstudiante("4","D","G1",7.51);
-        var p5 = new FuentePromediosPort.PromedioEstudiante("5","E","G1",null);
+        var p1 = new PromedioEstudiante("1","A","G1",6.99);
+        var p2 = new PromedioEstudiante("2","B","G1",7.0);
+        var p3 = new PromedioEstudiante("3","C","G1",7.5);
+        var p4 = new PromedioEstudiante("4","D","G1",7.51);
+        var p5 = new PromedioEstudiante("5","E","G1",null);
         var port = portCon(List.of(p1,p2,p3,p4,p5), List.of());
         var svc = new EstadisticasAcademicasService(port);
         var cls = svc.clasificarGlobales();
@@ -43,10 +45,10 @@ class EstadisticasAcademicasServiceTest {
 
     @Test
     void clasificaConElPromedioQueSeMuestra() {
-        var seVe700 = new FuentePromediosPort.PromedioEstudiante("1", "A", "G1", 6.9967);   // en pantalla: 7.00
-        var seVe699 = new FuentePromediosPort.PromedioEstudiante("2", "B", "G1", 6.9949);   // en pantalla: 6.99
-        var seVe750 = new FuentePromediosPort.PromedioEstudiante("3", "C", "G1", 7.5049);   // en pantalla: 7.50
-        var seVe751 = new FuentePromediosPort.PromedioEstudiante("4", "D", "G1", 7.5051);   // en pantalla: 7.51
+        var seVe700 = new PromedioEstudiante("1", "A", "G1", 6.9967);   // en pantalla: 7.00
+        var seVe699 = new PromedioEstudiante("2", "B", "G1", 6.9949);   // en pantalla: 6.99
+        var seVe750 = new PromedioEstudiante("3", "C", "G1", 7.5049);   // en pantalla: 7.50
+        var seVe751 = new PromedioEstudiante("4", "D", "G1", 7.5051);   // en pantalla: 7.51
         var cls = new EstadisticasAcademicasService(portCon(List.of(seVe700, seVe699, seVe750, seVe751), List.of()))
                 .clasificarGlobales();
         assertEquals(EstadisticasAcademicasUseCase.EstadoAcademico.APROBADO, cls.get(0).estado());
@@ -70,7 +72,7 @@ class EstadisticasAcademicasServiceTest {
 
     @Test
     void resumenSinEvaluados() {
-        var p = new FuentePromediosPort.PromedioEstudiante("1","A","G1",null);
+        var p = new PromedioEstudiante("1","A","G1",null);
         var port = portCon(List.of(p), List.of());
         var svc = new EstadisticasAcademicasService(port);
         var r = svc.resumenGlobal();
@@ -90,8 +92,8 @@ class EstadisticasAcademicasServiceTest {
 
     @Test
     void resumenCalculos() {
-        var p1 = new FuentePromediosPort.PromedioEstudiante("1","A","G1",8.0);
-        var p2 = new FuentePromediosPort.PromedioEstudiante("2","B","G1",6.0);
+        var p1 = new PromedioEstudiante("1","A","G1",8.0);
+        var p2 = new PromedioEstudiante("2","B","G1",6.0);
         var port = portCon(List.of(p1,p2), List.of(p1,p2));
         var svc = new EstadisticasAcademicasService(port);
         var r = svc.resumenGlobal();

@@ -11,8 +11,6 @@ import java.util.stream.Collectors;
 public class PromediosAcademicos {
     public record PromedioCurso(String clave, String nombreCurso, Double promedio) { }
 
-    public record PromedioEstudiante(String matricula, String nombre, String grupo, Double promedio) { }
-
     public record ReporteEstudiante(String matricula, String nombre,
                                     List<Calificacion> calificaciones,
                                     List<PromedioCurso> promediosPorCurso,

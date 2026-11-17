@@ -3,7 +3,6 @@ import bearstudent.dto.*;
 import bearstudent.logica.*;
 
 import bearstudent.logica.PromediosAcademicos.PromedioCurso;
-import bearstudent.logica.PromediosAcademicos.PromedioEstudiante;
 import bearstudent.logica.PromediosAcademicos.ReporteEstudiante;
 
 import javax.swing.*;
