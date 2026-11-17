@@ -1,12 +1,16 @@
 package bearstudent.logica;
-import bearstudent.dto.*;
+
+import bearstudent.dto.Curso;
+import bearstudent.dto.Estudiante;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -15,9 +19,13 @@ import java.util.stream.Collectors;
  * mediante los métodos públicos (buscar, listar, obtener inscritos, etc.).
  */
 public class RegistroAcademico {
-    // LinkedHashMap conserva el orden de registro (útil para reportes reproducibles)
+    // LinkedHashMap y LinkedHashSet conservan el orden de registro (útil para reportes reproducibles)
     private final Map<String, Estudiante> estudiantes = new LinkedHashMap<>();
     private final Map<String, Curso> cursos = new LinkedHashMap<>();
+    // Las inscripciones se guardan en los dos sentidos para no tener que buscar:
+    // matrícula -> claves de sus cursos, y clave -> matrículas inscritas. Un Set no admite repetidos.
+    private final Map<String, Set<String>> cursosPorEstudiante = new LinkedHashMap<>();
+    private final Map<String, Set<String>> inscritosPorCurso = new LinkedHashMap<>();
 
     // ---------- Registro ----------
 
@@ -29,6 +37,7 @@ public class RegistroAcademico {
             throw new ValidacionException("Ya existe un estudiante con la matrícula " + mat);
         }
         estudiantes.put(mat, new Estudiante(mat, nom, gru));
+        cursosPorEstudiante.put(mat, new LinkedHashSet<>());
     }
 
     public void registrarCurso(String clave, String nombre) {
@@ -38,6 +47,7 @@ public class RegistroAcademico {
             throw new ValidacionException("Ya existe un curso con la clave " + cla);
         }
         cursos.put(cla, new Curso(cla, nom));
+        inscritosPorCurso.put(cla, new LinkedHashSet<>());
     }
 
     // ---------- Inscripción ----------
@@ -45,36 +55,20 @@ public class RegistroAcademico {
     public void inscribir(String matricula, String clave) {
         Estudiante estudiante = buscarEstudiante(matricula);
         Curso curso = buscarCurso(clave);
-        if (estudiante.estaInscritoEn(curso.getClave())) {
+        if (estaInscrito(estudiante.getMatricula(), curso.getClave())) {
             throw new ValidacionException("El estudiante " + estudiante.getMatricula()
                     + " ya está inscrito en el curso " + curso.getClave());
         }
-        estudiante.agregarCurso(curso.getClave());
-        curso.agregarEstudiante(estudiante.getMatricula());
+        cursosPorEstudiante.get(estudiante.getMatricula()).add(curso.getClave());
+        inscritosPorCurso.get(curso.getClave()).add(estudiante.getMatricula());
     }
 
-    /**
-     * Inscribe a varios estudiantes en un curso. Devuelve los mensajes de error
-     * de los que no se pudieron inscribir (lista vacía si todo salió bien).
-     */
-    public List<String> inscribirVarios(List<String> matriculas, String clave) {
-        List<String> errores = new ArrayList<>();
-        for (String matricula : matriculas) {
-            try {
-                inscribir(matricula, clave);
-            } catch (ValidacionException e) {
-                errores.add(matricula + ": " + e.getMessage());
-            }
-        }
-        return errores;
-    }
-
-    // ---------- Consultas (las usarán los demás módulos) ----------
+    // ---------- Consultas (las usan los demás módulos) ----------
 
     public Estudiante buscarEstudiante(String matricula) {
         Estudiante e = estudiantes.get(limpiar(matricula));
         if (e == null) {
-            throw new ValidacionException("El estudiante " + matricula + " no existe");
+            throw new ValidacionException("El estudiante " + limpiar(matricula) + " no existe");
         }
         return e;
     }
@@ -82,31 +76,34 @@ public class RegistroAcademico {
     public Curso buscarCurso(String clave) {
         Curso c = cursos.get(limpiar(clave));
         if (c == null) {
-            throw new ValidacionException("El curso " + clave + " no existe");
+            throw new ValidacionException("El curso " + limpiar(clave) + " no existe");
         }
         return c;
     }
 
     /** true si el estudiante existe, el curso existe y el estudiante está inscrito. */
     public boolean estaInscrito(String matricula, String clave) {
-        Estudiante e = estudiantes.get(limpiar(matricula));
-        return e != null && e.estaInscritoEn(limpiar(clave));
+        return cursosPorEstudiante.getOrDefault(limpiar(matricula), Set.of()).contains(limpiar(clave));
     }
 
-    /** Claves de los cursos de un estudiante (lista vacía si el estudiante no existe). */
+    /** Claves de los cursos de un estudiante, en orden de inscripción (lista vacía si el estudiante no existe). */
     public List<String> cursosDeEstudiante(String matricula) {
-        Estudiante e = estudiantes.get(limpiar(matricula));
-        return e == null ? new ArrayList<>() : new ArrayList<>(e.getCodigosCursos());
+        return new ArrayList<>(cursosPorEstudiante.getOrDefault(limpiar(matricula), Set.of()));
     }
 
     /** Estudiantes inscritos en un curso (lanza ValidacionException si el curso no existe). */
     public List<Estudiante> estudiantesDeCurso(String clave) {
         Curso curso = buscarCurso(clave);
         List<Estudiante> lista = new ArrayList<>();
-        for (String matricula : curso.getMatriculasInscritas()) {
+        for (String matricula : inscritosPorCurso.get(curso.getClave())) {
             lista.add(estudiantes.get(matricula));
         }
         return lista;
+    }
+
+    /** Cuántos estudiantes tiene un curso (0 si el curso no existe). */
+    public int totalInscritos(String clave) {
+        return inscritosPorCurso.getOrDefault(limpiar(clave), Set.of()).size();
     }
 
     public Collection<Estudiante> listarEstudiantes() {
@@ -117,10 +114,11 @@ public class RegistroAcademico {
         return new ArrayList<>(cursos.values());
     }
 
-    /** Estudiantes de un grupo (usa lambda/stream). */
+    /** Estudiantes de un grupo, ordenados por nombre; el grupo no distingue mayúsculas ni espacios sobrantes. */
     public List<Estudiante> estudiantesPorGrupo(String grupo) {
+        String gru = limpiar(grupo);
         return estudiantes.values().stream()
-                .filter(e -> e.getGrupo().equalsIgnoreCase(grupo))
+                .filter(e -> e.getGrupo().equalsIgnoreCase(gru))
                 .sorted(Comparator.comparing(Estudiante::getNombre))
                 .collect(Collectors.toList());
     }
@@ -138,4 +136,3 @@ public class RegistroAcademico {
         return valor.trim();
     }
 }
-

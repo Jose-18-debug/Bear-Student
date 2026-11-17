@@ -91,7 +91,7 @@ public class Main {
             return;
         }
         System.out.println("--- Estudiantes ---");
-        lista.forEach(System.out::println);
+        lista.forEach(Main::imprimir);
     }
 
     private static void listarCursos() {
@@ -101,7 +101,7 @@ public class Main {
             return;
         }
         System.out.println("--- Cursos ---");
-        lista.forEach(System.out::println);
+        lista.forEach(c -> System.out.println(c + " - Inscritos: " + registro.totalInscritos(c.getClave())));
     }
 
     private static void verInscritosDeCurso() {
@@ -112,7 +112,7 @@ public class Main {
                 System.out.println("El curso no tiene estudiantes inscritos.");
             } else {
                 System.out.println("--- Inscritos ---");
-                inscritos.forEach(System.out::println);
+                inscritos.forEach(Main::imprimir);
             }
         } catch (ValidacionException e) {
             System.out.println("Error: " + e.getMessage());
@@ -126,8 +126,12 @@ public class Main {
             System.out.println("No hay estudiantes en ese grupo.");
         } else {
             System.out.println("--- Grupo " + grupo + " ---");
-            lista.forEach(System.out::println);
+            lista.forEach(Main::imprimir);
         }
+    }
+
+    private static void imprimir(Estudiante e) {
+        System.out.println(e + " - Cursos: " + registro.cursosDeEstudiante(e.getMatricula()));
     }
 
     // ---------- Lectura de datos ----------

@@ -1,5 +1,9 @@
 package bearstudent.logica;
-import bearstudent.dto.*;
+
+import bearstudent.dto.Calificacion;
+import bearstudent.dto.Curso;
+import bearstudent.dto.Estudiante;
+import bearstudent.dto.PromedioEstudiante;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,9 +12,17 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Módulo de la Persona 3: promedios por curso, promedio final y estudiantes ordenados por promedio.
+ * Usa RegistroAcademico (parte 1) para saber quién está inscrito y RegistroCalificaciones (parte 2)
+ * para las calificaciones. Un promedio sin calificaciones es null, para distinguirlo de un 0.
+ */
 public class PromediosAcademicos {
+
+    /** Promedio de un estudiante en uno de sus cursos (null si no tiene calificaciones en él). */
     public record PromedioCurso(String clave, String nombreCurso, Double promedio) { }
 
+    /** Todo lo que se muestra de un estudiante: sus calificaciones, el promedio de cada curso y el final. */
     public record ReporteEstudiante(String matricula, String nombre,
                                     List<Calificacion> calificaciones,
                                     List<PromedioCurso> promediosPorCurso,
@@ -24,16 +36,18 @@ public class PromediosAcademicos {
         this.notas = notas;
     }
 
+    /** Promedio de las calificaciones del estudiante en ese curso. */
     public Double promedioDeEstudianteEnCurso(String matricula, String clave) {
         Estudiante estudiante = academico.buscarEstudiante(matricula);
         Curso curso = academico.buscarCurso(clave);
         return promedio(notas.calificacionesDeCurso(estudiante.getMatricula(), curso.getClave()));
     }
 
+    /** Un PromedioCurso por cada curso en el que está inscrito el estudiante. */
     public List<PromedioCurso> promediosPorCurso(String matricula) {
         Estudiante estudiante = academico.buscarEstudiante(matricula);
         List<PromedioCurso> lista = new ArrayList<>();
-        for (String clave : estudiante.getCodigosCursos()) {
+        for (String clave : academico.cursosDeEstudiante(estudiante.getMatricula())) {
             Curso curso = academico.buscarCurso(clave);
             lista.add(new PromedioCurso(clave, curso.getNombre(),
                     promedio(notas.calificacionesDeCurso(estudiante.getMatricula(), clave))));
@@ -41,6 +55,7 @@ public class PromediosAcademicos {
         return lista;
     }
 
+    /** Promedio de los promedios de sus cursos; los cursos sin calificaciones no cuentan. */
     public Double promedioFinal(String matricula) {
         List<Double> deCada = new ArrayList<>();
         for (PromedioCurso pc : promediosPorCurso(matricula)) {
@@ -49,11 +64,12 @@ public class PromediosAcademicos {
         return promedio(deCada);
     }
 
+    /** Promedio de los promedios de los inscritos que tienen calificaciones en el curso. */
     public Double promedioDeCurso(String clave) {
         Curso curso = academico.buscarCurso(clave);
         List<Double> deCada = new ArrayList<>();
-        for (String matricula : curso.getMatriculasInscritas()) {
-            Double p = promedio(notas.calificacionesDeCurso(matricula, curso.getClave()));
+        for (Estudiante e : academico.estudiantesDeCurso(curso.getClave())) {
+            Double p = promedio(notas.calificacionesDeCurso(e.getMatricula(), curso.getClave()));
             if (p != null) deCada.add(p);
         }
         return promedio(deCada);
@@ -69,16 +85,19 @@ public class PromediosAcademicos {
                 promedioFinal(estudiante.getMatricula()));
     }
 
+    /** Todos los estudiantes con su promedio final; los que no tienen calificaciones van al final. */
     public List<PromedioEstudiante> ordenarPorPromedio(boolean descendente) {
         return ordenar(academico.listarEstudiantes(), e -> promedioFinal(e.getMatricula()), descendente);
     }
 
+    /** Los inscritos en un curso con su promedio en ese curso; los que no tienen calificaciones van al final. */
     public List<PromedioEstudiante> ordenarPorPromedioEnCurso(String clave, boolean descendente) {
         Curso curso = academico.buscarCurso(clave);
         return ordenar(academico.estudiantesDeCurso(curso.getClave()),
                 e -> promedioDeEstudianteEnCurso(e.getMatricula(), curso.getClave()), descendente);
     }
 
+    /** Los empates se ordenan por nombre y después por matrícula, para que el resultado siempre sea el mismo. */
     private List<PromedioEstudiante> ordenar(Collection<Estudiante> estudiantes,
                                              Function<Estudiante, Double> calculo, boolean descendente) {
         Comparator<Double> porPromedio = Comparator.naturalOrder();
@@ -98,4 +117,3 @@ public class PromediosAcademicos {
         return valores.stream().mapToDouble(Double::doubleValue).average().getAsDouble();
     }
 }
-

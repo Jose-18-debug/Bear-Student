@@ -426,7 +426,7 @@ public class VentanaPrincipal extends JFrame {
         }
         tablaCursos.modelo.setRowCount(0);
         for (Curso c : cursos) {
-            tablaCursos.modelo.addRow(new Object[]{c.getClave(), c.getNombre(), c.getTotalInscritos()});
+            tablaCursos.modelo.addRow(new Object[]{c.getClave(), c.getNombre(), registro.totalInscritos(c.getClave())});
         }
         tablaInscripciones.modelo.setRowCount(0);
         int totalInscripciones = 0;
