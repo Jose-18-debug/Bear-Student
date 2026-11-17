@@ -59,12 +59,12 @@ class ReportesView:
         barra.grid(row=2, column=0, columnspan=3, sticky="w", pady=(14, 0))
         self.boton_json = BotonInvierno(
             barra, "Exportar JSON", lambda: self.exportar("json"),
-            self.fuente, primario=False
+            self.fuente, primario=True
         )
         self.boton_json.pack(side="left")
         self.boton_csv = BotonInvierno(
             barra, "Exportar CSV", lambda: self.exportar("csv"),
-            self.fuente, primario=False
+            self.fuente, primario=True
         )
         self.boton_csv.pack(side="left", padx=(8, 0))
         self._habilitar_exportacion(False)
