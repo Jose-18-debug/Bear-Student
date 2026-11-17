@@ -1,11 +1,17 @@
 package bearstudent.logica.estadisticas;
-import bearstudent.logica.*;
-import bearstudent.dto.*;
 
+import bearstudent.logica.ValidacionException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 public class EstadisticasAcademicasService implements EstadisticasAcademicasUseCase {
+    /** Promedio mínimo para aprobar. */
+    static final double APROBATORIO = 7.0;
+    /** Un aprobado con este promedio o menos está en riesgo académico. */
+    static final double LIMITE_RIESGO = 7.5;
+
     private final FuentePromediosPort fuente;
 
     public EstadisticasAcademicasService(FuentePromediosPort fuente) {
@@ -40,6 +46,10 @@ public class EstadisticasAcademicasService implements EstadisticasAcademicasUseC
         }
     }
 
+    /**
+     * Se clasifica con el promedio redondeado a 2 decimales, que es el que se ve en pantalla y en los reportes.
+     * Así, un 6.9967 que se muestra como 7.00 cuenta como aprobado.
+     */
     private List<ClasificacionEstudiante> clasificar(List<FuentePromediosPort.PromedioEstudiante> lista) {
         return lista.stream().map(p -> {
             Double prom = p.promedio();
@@ -48,9 +58,9 @@ public class EstadisticasAcademicasService implements EstadisticasAcademicasUseC
             if (prom == null) {
                 estado = EstadoAcademico.SIN_EVALUAR;
                 enRiesgo = false;
-            } else if (prom >= 7.0) {
+            } else if (redondear(prom) >= APROBATORIO) {
                 estado = EstadoAcademico.APROBADO;
-                enRiesgo = prom <= 7.5;
+                enRiesgo = redondear(prom) <= LIMITE_RIESGO;
             } else {
                 estado = EstadoAcademico.REPROBADO;
                 enRiesgo = true;
@@ -84,8 +94,9 @@ public class EstadisticasAcademicasService implements EstadisticasAcademicasUseC
         if (!hay) { max = 0.0; min = 0.0; }
         return new ResumenEstadistico(total, evaluados, aprobados, reprobados, enRiesgo, promedioGeneral, max, min, porcentaje);
     }
+
+    /** Redondeo a 2 decimales igual al de String.format("%.2f"). */
+    static double redondear(double valor) {
+        return BigDecimal.valueOf(valor).setScale(2, RoundingMode.HALF_UP).doubleValue();
+    }
 }
-
-
-
-

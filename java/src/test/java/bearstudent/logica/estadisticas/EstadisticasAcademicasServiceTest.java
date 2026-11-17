@@ -42,6 +42,20 @@ class EstadisticasAcademicasServiceTest {
     }
 
     @Test
+    void clasificaConElPromedioQueSeMuestra() {
+        var seVe700 = new FuentePromediosPort.PromedioEstudiante("1", "A", "G1", 6.9967);   // en pantalla: 7.00
+        var seVe699 = new FuentePromediosPort.PromedioEstudiante("2", "B", "G1", 6.9949);   // en pantalla: 6.99
+        var seVe750 = new FuentePromediosPort.PromedioEstudiante("3", "C", "G1", 7.5049);   // en pantalla: 7.50
+        var seVe751 = new FuentePromediosPort.PromedioEstudiante("4", "D", "G1", 7.5051);   // en pantalla: 7.51
+        var cls = new EstadisticasAcademicasService(portCon(List.of(seVe700, seVe699, seVe750, seVe751), List.of()))
+                .clasificarGlobales();
+        assertEquals(EstadisticasAcademicasUseCase.EstadoAcademico.APROBADO, cls.get(0).estado());
+        assertEquals(EstadisticasAcademicasUseCase.EstadoAcademico.REPROBADO, cls.get(1).estado());
+        assertTrue(cls.get(2).enRiesgo());
+        assertFalse(cls.get(3).enRiesgo());
+    }
+
+    @Test
     void resumenVacio() {
         var port = portCon(List.of(), List.of());
         var svc = new EstadisticasAcademicasService(port);
