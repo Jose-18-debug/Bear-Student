@@ -1,15 +1,19 @@
 package bearstudent.ui;
-import bearstudent.dto.*;
-import bearstudent.logica.*;
+
+import bearstudent.dto.Curso;
+import bearstudent.dto.Estudiante;
+import bearstudent.logica.RegistroAcademico;
+import bearstudent.logica.ValidacionException;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 
 /**
- * Menú de consola de la Parte 1 (modo texto). La interfaz gráfica está en VentanaPrincipal.
+ * Menú de consola de la parte 1 (modo texto): registrar, inscribir y listar.
+ * La aplicación completa, con las cinco partes, es la ventana de VentanaPrincipal.
  */
-public class Main {
+public class MenuConsola {
     private static final Scanner entrada = new Scanner(System.in);
     private static final RegistroAcademico registro = new RegistroAcademico();
 
@@ -91,7 +95,7 @@ public class Main {
             return;
         }
         System.out.println("--- Estudiantes ---");
-        lista.forEach(Main::imprimir);
+        lista.forEach(MenuConsola::imprimir);
     }
 
     private static void listarCursos() {
@@ -112,7 +116,7 @@ public class Main {
                 System.out.println("El curso no tiene estudiantes inscritos.");
             } else {
                 System.out.println("--- Inscritos ---");
-                inscritos.forEach(Main::imprimir);
+                inscritos.forEach(MenuConsola::imprimir);
             }
         } catch (ValidacionException e) {
             System.out.println("Error: " + e.getMessage());
@@ -126,7 +130,7 @@ public class Main {
             System.out.println("No hay estudiantes en ese grupo.");
         } else {
             System.out.println("--- Grupo " + grupo + " ---");
-            lista.forEach(Main::imprimir);
+            lista.forEach(MenuConsola::imprimir);
         }
     }
 

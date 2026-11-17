@@ -1,15 +1,18 @@
 package bearstudent.ui;
 
+import bearstudent.dto.Curso;
 import bearstudent.logica.PromediosAcademicos;
 import bearstudent.logica.RegistroAcademico;
 import bearstudent.logica.RegistroCalificaciones;
-import bearstudent.dto.Curso;
 import bearstudent.logica.ValidacionException;
 import bearstudent.logica.estadisticas.EstadisticasAcademicasUseCase.ClasificacionEstudiante;
 import bearstudent.logica.estadisticas.EstadisticasAcademicasUseCase.ResumenEstadistico;
 import bearstudent.logica.reportes.ExportadorReportes;
 import bearstudent.logica.reportes.GeneradorReportes;
 import bearstudent.logica.reportes.GeneradorReportes.Reporte;
+import bearstudent.ui.componentes.BotonRedondo;
+import bearstudent.ui.componentes.Opcion;
+import bearstudent.ui.componentes.PanelTabla;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -23,14 +26,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static bearstudent.ui.VentanaPrincipal.*;
+import static bearstudent.ui.componentes.Componentes.*;
+import static bearstudent.ui.componentes.Estilo.*;
 
 /**
  * Pestaña de la Persona 5: reporte general, por grupo o por asignatura, con las estadísticas
- * de la Persona 4 (aprobados, reprobados, riesgo, promedio general, máxima, mínima y % de aprobación)
+ * de la Persona 4 (aprobados, reprobados, riesgo, promedio general, más alto, más bajo y % de aprobación)
  * y botones para exportarlo a JSON o CSV.
  */
-public class PanelReportes extends JPanel {
+public class PanelReportes extends JPanel implements Refrescable {
     private static final String GENERAL = "general:";
     private static final String GRUPO = "grupo:";
     private static final String CURSO = "curso:";
@@ -44,11 +48,15 @@ public class PanelReportes extends JPanel {
 
     private final JComboBox<Opcion> selector = new JComboBox<>();
     private final JLabel[] valores = new JLabel[NOMBRES_ESTADISTICAS.length];
-    private final PanelTabla tabla;
-    private final BotonRedondo botonJson;
-    private final BotonRedondo botonCsv;
+    private final PanelTabla tabla = new PanelTabla(
+            new String[]{"Matrícula", "Nombre", "Grupo", "Promedio", "Estado", "En riesgo"},
+            new Class<?>[]{String.class, String.class, String.class, Double.class, String.class, String.class},
+            new int[]{120, 260, 90, 100, 120, 90},
+            "No hay estudiantes para este reporte. Registra estudiantes y captura calificaciones.");
+    private final BotonRedondo botonJson = new BotonRedondo("Exportar JSON", true, () -> exportar("json"));
+    private final BotonRedondo botonCsv = new BotonRedondo("Exportar CSV", false, () -> exportar("csv"));
     private Reporte actual;
-    private boolean cargando;
+    private boolean cargando;   // evita que la lista reaccione mientras se rellena
 
     public PanelReportes(RegistroAcademico academico, RegistroCalificaciones notas) {
         super(new BorderLayout());
@@ -57,16 +65,7 @@ public class PanelReportes extends JPanel {
         setOpaque(false);
         estilizarCombo(selector);
         selector.setPreferredSize(new Dimension(360, 32));
-
-        tabla = new PanelTabla(
-                new String[]{"Matrícula", "Nombre", "Grupo", "Promedio", "Estado", "En riesgo"},
-                new Class<?>[]{String.class, String.class, String.class, Double.class, String.class, String.class},
-                new int[]{120, 260, 90, 100, 120, 90},
-                "No hay estudiantes para este reporte. Registra estudiantes y captura calificaciones.");
         tabla.setPreferredSize(new Dimension(100, 300));
-
-        botonJson = new BotonRedondo("Exportar JSON", true, () -> exportar("json"));
-        botonCsv = new BotonRedondo("Exportar CSV", false, () -> exportar("csv"));
 
         // Selector del reporte (izquierda) y botones de exportar (derecha)
         JPanel izquierda = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
@@ -82,7 +81,7 @@ public class PanelReportes extends JPanel {
         cabecera.add(izquierda, BorderLayout.WEST);
         cabecera.add(derecha, BorderLayout.EAST);
 
-        // Estadísticas: un cuadrito por cada dato
+        // Estadísticas: un cuadro por cada dato
         JPanel cuadros = new JPanel(new GridLayout(2, 4, 8, 8));
         cuadros.setOpaque(false);
         for (int i = 0; i < NOMBRES_ESTADISTICAS.length; i++) {
@@ -95,22 +94,14 @@ public class PanelReportes extends JPanel {
         cuerpo.add(cabecera, BorderLayout.NORTH);
         cuerpo.add(cuadros, BorderLayout.CENTER);
         cuerpo.add(tabla, BorderLayout.SOUTH);
-
-        PaginaScrollable pagina = new PaginaScrollable();
-        pagina.setBorder(new EmptyBorder(12, 12, 12, 12));
-        pagina.add(tarjeta("Reportes y estadísticas", cuerpo), BorderLayout.NORTH);
-        JScrollPane scroll = new JScrollPane(pagina,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getViewport().setBackground(NIEVE);
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
-        add(scroll, BorderLayout.CENTER);
+        add(pagina(tarjeta("Reportes y estadísticas", cuerpo), null), BorderLayout.CENTER);
 
         selector.addActionListener(e -> { if (!cargando) refrescarReporte(); });
         refrescar();
     }
 
     /** Vuelve a llenar la lista de reportes (grupos y cursos pueden haber cambiado) y recalcula el actual. */
+    @Override
     public void refrescar() {
         List<Opcion> opciones = new ArrayList<>();
         opciones.add(new Opcion(GENERAL, "General (todos los estudiantes)"));
@@ -130,29 +121,28 @@ public class PanelReportes extends JPanel {
     }
 
     private void refrescarReporte() {
-        tabla.modelo.setRowCount(0);
         actual = null;
-        Opcion opcion = (Opcion) selector.getSelectedItem();
-        if (opcion != null) {
+        String id = idElegido(selector);
+        if (!id.isEmpty()) {
             try {
-                actual = generar(opcion.id);
+                actual = generar(id);
             } catch (ValidacionException e) {
                 actual = null;          // p. ej. el grupo se quedó sin estudiantes
             }
         }
+        List<Object[]> filas = new ArrayList<>();
         if (actual != null) {
             for (ClasificacionEstudiante c : actual.estudiantes()) {
-                tabla.modelo.addRow(new Object[]{
+                filas.add(new Object[]{
                         c.matricula(), c.nombre(), c.grupo(),
-                        c.promedio() == null ? (Object) "Sin notas" : c.promedio(),
+                        c.promedio() == null ? "Sin notas" : c.promedio(),
                         estado(c), c.promedio() == null ? "—" : (c.enRiesgo() ? "Sí" : "No")});
             }
         }
+        tabla.llenar(filas);
         mostrarEstadisticas(actual == null ? null : actual.resumen());
-        boolean hayDatos = actual != null && !actual.estudiantes().isEmpty();
-        tabla.mostrar(hayDatos);
-        botonJson.setEnabled(hayDatos);
-        botonCsv.setEnabled(hayDatos);
+        botonJson.setEnabled(!filas.isEmpty());
+        botonCsv.setEnabled(!filas.isEmpty());
     }
 
     private Reporte generar(String id) {
@@ -197,11 +187,10 @@ public class PanelReportes extends JPanel {
         }
         try {
             ExportadorReportes.exportar(actual, archivo.toPath());
-            JOptionPane.showMessageDialog(this, "Reporte guardado en:\n" + archivo.getAbsolutePath(),
-                    "Listo", JOptionPane.INFORMATION_MESSAGE);
+            aviso(this, "Listo", "Reporte guardado en:\n" + archivo.getAbsolutePath(), JOptionPane.INFORMATION_MESSAGE);
         } catch (IOException | ValidacionException e) {
-            JOptionPane.showMessageDialog(this, "No se pudo guardar el reporte: " + e.getMessage(),
-                    "No se pudo exportar", JOptionPane.ERROR_MESSAGE);
+            aviso(this, "No se pudo exportar", "No se pudo guardar el reporte: " + e.getMessage(),
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 

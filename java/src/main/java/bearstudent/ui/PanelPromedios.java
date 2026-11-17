@@ -1,20 +1,30 @@
 package bearstudent.ui;
-import bearstudent.dto.*;
-import bearstudent.logica.*;
 
+import bearstudent.dto.Calificacion;
+import bearstudent.dto.Curso;
+import bearstudent.dto.PromedioEstudiante;
+import bearstudent.logica.PromediosAcademicos;
 import bearstudent.logica.PromediosAcademicos.PromedioCurso;
 import bearstudent.logica.PromediosAcademicos.ReporteEstudiante;
+import bearstudent.logica.RegistroAcademico;
+import bearstudent.logica.RegistroCalificaciones;
+import bearstudent.ui.componentes.Opcion;
+import bearstudent.ui.componentes.PanelTabla;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static bearstudent.ui.VentanaPrincipal.*;
+import static bearstudent.ui.componentes.Componentes.*;
+import static bearstudent.ui.componentes.Estilo.*;
 
-public class PanelPromedios extends JPanel {
+/**
+ * Pestaña de la parte 3: calificaciones y promedios de un estudiante, y estudiantes ordenados por promedio.
+ * No contiene lógica de negocio: solo llama a PromediosAcademicos.
+ */
+public class PanelPromedios extends JPanel implements Refrescable {
     private static final String SIN_NOTAS = "Sin notas";
 
     private final RegistroAcademico academico;
@@ -26,10 +36,22 @@ public class PanelPromedios extends JPanel {
     private final JComboBox<String> rankingOrden = new JComboBox<>(new String[]{"Mayor a menor", "Menor a mayor"});
     private final JLabel promedioCurso = new JLabel(" ");
 
-    private final PanelTabla tablaCalificaciones;
-    private final PanelTabla tablaPromedios;
-    private final PanelTabla tablaRanking;
-    private boolean cargando;
+    private final PanelTabla tablaCalificaciones = new PanelTabla(
+            new String[]{"Curso", "Evaluación", "Calificación"},
+            new Class<?>[]{String.class, String.class, Double.class},
+            new int[]{260, 160, 110},
+            "Este estudiante todavía no tiene calificaciones.");
+    private final PanelTabla tablaPromedios = new PanelTabla(
+            new String[]{"Curso", "Promedio"},
+            new Class<?>[]{String.class, Double.class},
+            new int[]{260, 110},
+            "Este estudiante no está inscrito en ningún curso.");
+    private final PanelTabla tablaRanking = new PanelTabla(
+            new String[]{"Lugar", "Matrícula", "Nombre", "Grupo", "Promedio"},
+            new Class<?>[]{Integer.class, String.class, String.class, String.class, Double.class},
+            new int[]{70, 140, 280, 100, 110},
+            "Todavía no hay estudiantes registrados.");
+    private boolean cargando;   // evita que los combos reaccionen mientras se rellenan
 
     public PanelPromedios(RegistroAcademico academico, RegistroCalificaciones notas) {
         super(new BorderLayout());
@@ -41,75 +63,18 @@ public class PanelPromedios extends JPanel {
         }
         consultaEstudiante.setPreferredSize(new Dimension(340, 32));
         rankingBase.setPreferredSize(new Dimension(340, 32));
-
-        tablaCalificaciones = new PanelTabla(
-                new String[]{"Curso", "Evaluación", "Calificación"},
-                new Class<?>[]{String.class, String.class, Double.class},
-                new int[]{260, 160, 110},
-                "Este estudiante todavía no tiene calificaciones.");
-        tablaPromedios = new PanelTabla(
-                new String[]{"Curso", "Promedio"},
-                new Class<?>[]{String.class, Double.class},
-                new int[]{260, 110},
-                "Este estudiante no está inscrito en ningún curso.");
-        tablaRanking = new PanelTabla(
-                new String[]{"Lugar", "Matrícula", "Nombre", "Grupo", "Promedio"},
-                new Class<?>[]{Integer.class, String.class, String.class, String.class, Double.class},
-                new int[]{70, 140, 280, 100, 110},
-                "Todavía no hay estudiantes registrados.");
-
         promedioFinal.setFont(fuente(SUBTITULO, true));
         promedioFinal.setForeground(AZUL_INVIERNO);
         promedioCurso.setFont(fuente(TEXTO, true));
         promedioCurso.setForeground(AZUL_INVIERNO);
 
-        JPanel selectorConsulta = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        selectorConsulta.setOpaque(false);
-        selectorConsulta.add(etiqueta("Estudiante"));
-        selectorConsulta.add(consultaEstudiante);
-        JPanel tablas = new JPanel(new GridLayout(1, 2, 12, 0));
-        tablas.setOpaque(false);
-        tablas.add(tablaCalificaciones);
-        tablas.add(tablaPromedios);
-        tablas.setPreferredSize(new Dimension(100, 230));
-        JPanel cuerpoConsulta = new JPanel(new BorderLayout(0, 8));
-        cuerpoConsulta.setOpaque(false);
-        cuerpoConsulta.add(selectorConsulta, BorderLayout.NORTH);
-        cuerpoConsulta.add(tablas, BorderLayout.CENTER);
-        cuerpoConsulta.add(promedioFinal, BorderLayout.SOUTH);
-
-        JPanel selectorRanking = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        selectorRanking.setOpaque(false);
-        selectorRanking.add(etiqueta("Ordenar por"));
-        selectorRanking.add(rankingBase);
-        selectorRanking.add(etiqueta("Orden"));
-        selectorRanking.add(rankingOrden);
-        JPanel cabeceraRanking = new JPanel(new BorderLayout());
-        cabeceraRanking.setOpaque(false);
-        cabeceraRanking.add(selectorRanking, BorderLayout.WEST);
-        cabeceraRanking.add(promedioCurso, BorderLayout.EAST);
-        tablaRanking.setPreferredSize(new Dimension(100, 280));
-        JPanel cuerpoRanking = new JPanel(new BorderLayout(0, 8));
-        cuerpoRanking.setOpaque(false);
-        cuerpoRanking.add(cabeceraRanking, BorderLayout.NORTH);
-        cuerpoRanking.add(tablaRanking, BorderLayout.CENTER);
-
         JPanel arriba = new JPanel();
         arriba.setLayout(new BoxLayout(arriba, BoxLayout.Y_AXIS));
         arriba.setOpaque(false);
-        arriba.add(tarjeta("Calificaciones y promedios de un estudiante", cuerpoConsulta));
+        arriba.add(tarjeta("Calificaciones y promedios de un estudiante", crearConsulta()));
         arriba.add(Box.createVerticalStrut(12));
-        arriba.add(tarjeta("Estudiantes ordenados por promedio", cuerpoRanking));
-
-        PaginaScrollable pagina = new PaginaScrollable();
-        pagina.setBorder(new EmptyBorder(12, 12, 12, 12));
-        pagina.add(arriba, BorderLayout.NORTH);
-        JScrollPane scroll = new JScrollPane(pagina,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getViewport().setBackground(NIEVE);
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
-        add(scroll, BorderLayout.CENTER);
+        arriba.add(tarjeta("Estudiantes ordenados por promedio", crearRanking()));
+        add(pagina(arriba, null), BorderLayout.CENTER);
 
         consultaEstudiante.addActionListener(e -> { if (!cargando) refrescarConsulta(); });
         rankingBase.addActionListener(e -> { if (!cargando) refrescarRanking(); });
@@ -117,12 +82,46 @@ public class PanelPromedios extends JPanel {
         refrescar();
     }
 
+    private JPanel crearConsulta() {
+        JPanel selector = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        selector.setOpaque(false);
+        selector.add(etiqueta("Estudiante"));
+        selector.add(consultaEstudiante);
+        JPanel tablas = new JPanel(new GridLayout(1, 2, 12, 0));
+        tablas.setOpaque(false);
+        tablas.add(tablaCalificaciones);
+        tablas.add(tablaPromedios);
+        tablas.setPreferredSize(new Dimension(100, 230));
+        JPanel cuerpo = new JPanel(new BorderLayout(0, 8));
+        cuerpo.setOpaque(false);
+        cuerpo.add(selector, BorderLayout.NORTH);
+        cuerpo.add(tablas, BorderLayout.CENTER);
+        cuerpo.add(promedioFinal, BorderLayout.SOUTH);
+        return cuerpo;
+    }
+
+    private JPanel crearRanking() {
+        JPanel selector = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        selector.setOpaque(false);
+        selector.add(etiqueta("Ordenar por"));
+        selector.add(rankingBase);
+        selector.add(etiqueta("Orden"));
+        selector.add(rankingOrden);
+        JPanel cabecera = new JPanel(new BorderLayout());
+        cabecera.setOpaque(false);
+        cabecera.add(selector, BorderLayout.WEST);
+        cabecera.add(promedioCurso, BorderLayout.EAST);
+        tablaRanking.setPreferredSize(new Dimension(100, 280));
+        JPanel cuerpo = new JPanel(new BorderLayout(0, 8));
+        cuerpo.setOpaque(false);
+        cuerpo.add(cabecera, BorderLayout.NORTH);
+        cuerpo.add(tablaRanking, BorderLayout.CENTER);
+        return cuerpo;
+    }
+
+    /** Vuelve a leer estudiantes y cursos. Se llama al abrir la pestaña. */
+    @Override
     public void refrescar() {
-        List<Opcion> estudiantes = new ArrayList<>();
-        for (Estudiante e : academico.listarEstudiantes()) {
-            estudiantes.add(new Opcion(e.getMatricula(),
-                    e.getMatricula() + " | " + e.getNombre() + " (" + e.getGrupo() + ")"));
-        }
         List<Opcion> bases = new ArrayList<>();
         bases.add(new Opcion("", "Promedio final"));
         for (Curso c : academico.listarCursos()) {
@@ -130,7 +129,7 @@ public class PanelPromedios extends JPanel {
         }
         cargando = true;
         try {
-            llenarCombo(consultaEstudiante, estudiantes);
+            llenarCombo(consultaEstudiante, opcionesEstudiantes(academico.listarEstudiantes()));
             llenarCombo(rankingBase, bases);
         } finally {
             cargando = false;
@@ -140,40 +139,39 @@ public class PanelPromedios extends JPanel {
     }
 
     private void refrescarConsulta() {
-        tablaCalificaciones.modelo.setRowCount(0);
-        tablaPromedios.modelo.setRowCount(0);
+        List<Object[]> calificaciones = new ArrayList<>();
+        List<Object[]> porCurso = new ArrayList<>();
         promedioFinal.setText(" ");
-        Opcion estudiante = (Opcion) consultaEstudiante.getSelectedItem();
-        if (estudiante != null) {
-            ReporteEstudiante reporte = promedios.reporteDeEstudiante(estudiante.id);
+        String matricula = idElegido(consultaEstudiante);
+        if (!matricula.isEmpty()) {
+            ReporteEstudiante reporte = promedios.reporteDeEstudiante(matricula);
             for (Calificacion c : reporte.calificaciones()) {
-                tablaCalificaciones.modelo.addRow(new Object[]{
-                        c.clave() + " | " + academico.buscarCurso(c.clave()).getNombre(),
+                calificaciones.add(new Object[]{c.clave() + " | " + academico.buscarCurso(c.clave()).getNombre(),
                         c.evaluacion(), c.calificacion()});
             }
             for (PromedioCurso pc : reporte.promediosPorCurso()) {
-                tablaPromedios.modelo.addRow(new Object[]{
-                        pc.clave() + " | " + pc.nombreCurso(),
-                        pc.promedio() == null ? (Object) SIN_NOTAS : pc.promedio()});
+                porCurso.add(new Object[]{pc.clave() + " | " + pc.nombreCurso(),
+                        pc.promedio() == null ? SIN_NOTAS : pc.promedio()});
             }
             promedioFinal.setText("Promedio final: " + formato(reporte.promedioFinal()));
         }
-        tablaCalificaciones.mostrar(tablaCalificaciones.modelo.getRowCount() > 0);
-        tablaPromedios.mostrar(tablaPromedios.modelo.getRowCount() > 0);
+        tablaCalificaciones.llenar(calificaciones);
+        tablaPromedios.llenar(porCurso);
     }
 
+    /** Los empates comparten lugar (1, 1, 3...) y los estudiantes sin notas van al final sin lugar. */
     private void refrescarRanking() {
-        tablaRanking.modelo.setRowCount(0);
-        Opcion base = (Opcion) rankingBase.getSelectedItem();
+        String clave = idElegido(rankingBase);
         boolean descendente = rankingOrden.getSelectedIndex() == 0;
         List<PromedioEstudiante> lista;
-        if (base == null || base.id.isEmpty()) {
+        if (clave.isEmpty()) {
             lista = promedios.ordenarPorPromedio(descendente);
             promedioCurso.setText(" ");
         } else {
-            lista = promedios.ordenarPorPromedioEnCurso(base.id, descendente);
-            promedioCurso.setText("Promedio del curso: " + formato(promedios.promedioDeCurso(base.id)));
+            lista = promedios.ordenarPorPromedioEnCurso(clave, descendente);
+            promedioCurso.setText("Promedio del curso: " + formato(promedios.promedioDeCurso(clave)));
         }
+        List<Object[]> filas = new ArrayList<>();
         int lugar = 0, contados = 0;
         Double previo = null;
         for (PromedioEstudiante p : lista) {
@@ -186,14 +184,12 @@ public class PanelPromedios extends JPanel {
                 colLugar = lugar;
                 colPromedio = p.promedio();
             }
-            tablaRanking.modelo.addRow(new Object[]{colLugar, p.matricula(), p.nombre(), p.grupo(), colPromedio});
+            filas.add(new Object[]{colLugar, p.matricula(), p.nombre(), p.grupo(), colPromedio});
         }
-        tablaRanking.mostrar(!lista.isEmpty());
+        tablaRanking.llenar(filas);
     }
 
     private static String formato(Double valor) {
         return valor == null ? "sin calificaciones" : String.format(Locale.US, "%.2f", valor);
     }
 }
-
-
