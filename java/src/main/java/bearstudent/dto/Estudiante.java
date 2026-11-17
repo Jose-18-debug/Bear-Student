@@ -1,4 +1,4 @@
-package bearstudent;
+package bearstudent.dto;
 
 import java.util.ArrayList;
 import java.util.Collections;

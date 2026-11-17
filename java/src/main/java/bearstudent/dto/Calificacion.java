@@ -1,4 +1,4 @@
-package bearstudent;
+package bearstudent.dto;
 
 /**
  * Una calificación capturada: de qué estudiante, en qué curso, en qué evaluación y cuánto sacó.

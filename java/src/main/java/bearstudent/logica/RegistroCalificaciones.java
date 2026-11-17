@@ -1,4 +1,5 @@
-package bearstudent;
+package bearstudent.logica;
+import bearstudent.dto.*;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -121,3 +122,4 @@ public class RegistroCalificaciones {
         return valor.trim();
     }
 }
+

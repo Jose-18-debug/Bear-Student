@@ -1,4 +1,6 @@
-package bearstudent;
+package bearstudent.ui;
+import bearstudent.dto.*;
+import bearstudent.logica.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -291,3 +293,4 @@ public class PanelCalificaciones extends JPanel {
         tabla.mostrar(tabla.modelo.getRowCount() > 0);
     }
 }
+

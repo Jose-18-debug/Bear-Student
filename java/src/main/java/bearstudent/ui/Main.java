@@ -1,4 +1,6 @@
-package bearstudent;
+package bearstudent.ui;
+import bearstudent.dto.*;
+import bearstudent.logica.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -148,3 +150,4 @@ public class Main {
         }
     }
 }
+

@@ -1,4 +1,6 @@
-package bearstudent;
+package bearstudent.ui;
+import bearstudent.dto.*;
+import bearstudent.logica.*;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -718,3 +720,4 @@ public class VentanaPrincipal extends JFrame {
         SwingUtilities.invokeLater(() -> new VentanaPrincipal().setVisible(true));
     }
 }
+

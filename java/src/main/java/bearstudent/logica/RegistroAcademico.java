@@ -1,4 +1,5 @@
-package bearstudent;
+package bearstudent.logica;
+import bearstudent.dto.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -137,3 +138,4 @@ public class RegistroAcademico {
         return valor.trim();
     }
 }
+

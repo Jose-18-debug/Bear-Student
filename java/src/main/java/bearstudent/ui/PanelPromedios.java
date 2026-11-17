@@ -1,8 +1,10 @@
-package bearstudent;
+package bearstudent.ui;
+import bearstudent.dto.*;
+import bearstudent.logica.*;
 
-import bearstudent.PromediosAcademicos.PromedioCurso;
-import bearstudent.PromediosAcademicos.PromedioEstudiante;
-import bearstudent.PromediosAcademicos.ReporteEstudiante;
+import bearstudent.logica.PromediosAcademicos.PromedioCurso;
+import bearstudent.logica.PromediosAcademicos.PromedioEstudiante;
+import bearstudent.logica.PromediosAcademicos.ReporteEstudiante;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -194,3 +196,5 @@ public class PanelPromedios extends JPanel {
         return valor == null ? "sin calificaciones" : String.format(Locale.US, "%.2f", valor);
     }
 }
+
+

@@ -1,4 +1,5 @@
-package bearstudent;
+package bearstudent.logica;
+import bearstudent.dto.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -99,3 +100,4 @@ public class PromediosAcademicos {
         return valores.stream().mapToDouble(Double::doubleValue).average().getAsDouble();
     }
 }
+
