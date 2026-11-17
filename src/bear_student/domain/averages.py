@@ -16,7 +16,7 @@ en el promedio hasta que se capturen.
 from dataclasses import dataclass
 
 ESCALA = 10.0
-CALIFICACION_APROBATORIA = 6.0
+CALIFICACION_APROBATORIA = 7.0
 
 
 def a_escala(nota, maxima):
