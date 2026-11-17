@@ -1,5 +1,5 @@
-import { ValidacionError } from '../../javascript copy/src/errores.js';
-import { EstadisticasAcademicas } from '../../javascript copy/src/estadisticas.js';
+import { ValidacionError } from './errores.js';
+import { EstadisticasAcademicas } from './estadisticas.js';
 
 class EstadisticasDeReporte extends EstadisticasAcademicas {
     resumir(clasificados) {
