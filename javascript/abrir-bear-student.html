@@ -386,7 +386,10 @@ class GestorAcademico {
             throw new ValidacionError(`El curso ${clave} no existe`);
         }
         const nom = textoObligatorio(nombre, 'El nombre de la evaluación no puede estar vacío');
-        const pon = numeroEnRango(ponderacion, 0, 100, 'La ponderación debe ser un número entre 0 y 100');
+        const valorPonderacion = typeof ponderacion === 'string'
+            ? ponderacion.trim().replace(/\s*%$/, '')
+            : ponderacion;
+        const pon = numeroEnRango(valorPonderacion, 0, 100, 'La ponderación debe ser un número entre 0 y 100');
         if (pon === 0) {
             throw new ValidacionError('La ponderación debe ser mayor que 0');
         }

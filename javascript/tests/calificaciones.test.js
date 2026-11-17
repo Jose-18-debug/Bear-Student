@@ -24,6 +24,13 @@ test('registra evaluaciones y suma sus ponderaciones', () => {
     assert.equal(g.ponderacionTotal('MAT101'), 100);
 });
 
+test('acepta la ponderación con el símbolo de porcentaje', () => {
+    const g = gestorConDatos();
+    const evaluacion = g.registrarEvaluacion('MAT101', 'Final', '100%');
+    assert.equal(evaluacion.ponderacion, 100);
+    assert.equal(g.ponderacionTotal('MAT101'), 100);
+});
+
 test('rechaza evaluación en un curso que no existe', () => {
     const g = gestorConDatos();
     assert.throws(() => g.registrarEvaluacion('FIS999', 'Parcial 1', 30), ValidacionError);
