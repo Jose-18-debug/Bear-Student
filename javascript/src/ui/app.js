@@ -87,6 +87,26 @@ function mostrarPonderacionDisponible() {
         : '';
 }
 
+// Muestra las calificaciones del estudiante elegido, agrupadas por curso, con sus promedios.
+function mostrarConsulta() {
+    const matricula = $('con-estudiante').value;
+    if (!matricula) {
+        $('con-resumen').textContent = '';
+        llenarTabla('consulta', []);
+        return;
+    }
+    const { cursos, promedioGeneral } = gestor.consultarEstudiante(matricula);
+    $('con-resumen').textContent = `Promedio general: ${promedioGeneral === null ? 'sin calificaciones' : promedioGeneral}`;
+    llenarTabla('consulta', cursos.flatMap((curso) =>
+        curso.calificaciones.map((c) => [curso.nombre, c.evaluacion, c.ponderacion, c.valor, curso.promedioFinal])));
+}
+
+function mostrarRanking() {
+    const descendente = $('orden-ranking').value === 'desc';
+    llenarTabla('ranking', gestor.estudiantesPorPromedio(descendente).map((e, i) =>
+        [i + 1, e.matricula, e.nombre, e.grupo, e.promedio === null ? '—' : e.promedio]));
+}
+
 // Vuelve a pintar todo desde el estado del gestor.
 function actualizar() {
     const estudiantes = [...gestor.estudiantes.values()];
@@ -116,6 +136,12 @@ function actualizar() {
         gestor.calificacionesDe(e.matricula, clave).map((c) =>
             [e.nombre, gestor.cursos.get(clave).nombre, c.evaluacion, c.valor])));
     llenarTabla('calificaciones', calificaciones);
+
+    llenarSelect($('con-estudiante'), estudiantes.map((e) => [e.matricula, `${e.matricula} | ${e.nombre}`]));
+    mostrarConsulta();
+    llenarTabla('promedios', gestor.promediosPorCurso().map((c) =>
+        [c.clave, c.nombre, c.inscritos, c.promedio === null ? '—' : c.promedio]));
+    mostrarRanking();
 
     $('btn-inscribir').disabled = estudiantes.length === 0 || cursos.length === 0;
     $('estado').textContent =
@@ -149,6 +175,8 @@ $('form-calificacion').addEventListener('submit', (e) => {
 $('cal-estudiante').addEventListener('change', actualizarSelectsCalificacion);
 $('cal-curso').addEventListener('change', actualizarSelectsCalificacion);
 $('ev-curso').addEventListener('change', mostrarPonderacionDisponible);
+$('con-estudiante').addEventListener('change', mostrarConsulta);
+$('orden-ranking').addEventListener('change', mostrarRanking);
 
 // Convierte el texto del lote en objetos para el gestor. Guarda el número de línea de cada uno
 // para que los errores digan en qué línea del cuadro de texto están.

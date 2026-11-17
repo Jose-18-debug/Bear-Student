@@ -103,6 +103,18 @@
         <ul class="lote-errores" id="lote-errores"></ul>
     </section>
 
+    <section class="panel">
+        <h2>Consultar calificaciones de un estudiante</h2>
+        <label for="con-estudiante">Estudiante</label>
+        <select id="con-estudiante"></select>
+        <p class="nota" id="con-resumen"></p>
+        <table>
+            <thead><tr><th>Curso</th><th>Evaluación</th><th class="num">Ponderación (%)</th><th class="num">Calificación</th><th class="num">Promedio del curso</th></tr></thead>
+            <tbody id="tbody-consulta"></tbody>
+        </table>
+        <p class="vacio" id="vacio-consulta">Este estudiante aún no tiene calificaciones.</p>
+    </section>
+
     <section>
         <div class="tab-lista" role="tablist">
             <button class="tab activa" data-tab="estudiantes" role="tab">Estudiantes</button>
@@ -110,6 +122,8 @@
             <button class="tab" data-tab="inscripciones" role="tab">Inscripciones</button>
             <button class="tab" data-tab="evaluaciones" role="tab">Evaluaciones</button>
             <button class="tab" data-tab="calificaciones" role="tab">Calificaciones</button>
+            <button class="tab" data-tab="promedios" role="tab">Promedios por curso</button>
+            <button class="tab" data-tab="ranking" role="tab">Ranking</button>
         </div>
 
         <div class="tab-panel" id="tab-estudiantes">
@@ -150,6 +164,27 @@
                 <tbody id="tbody-calificaciones"></tbody>
             </table>
             <p class="vacio" id="vacio-calificaciones">Aún no hay calificaciones capturadas.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-promedios" hidden>
+            <table>
+                <thead><tr><th>Clave</th><th>Curso</th><th class="num">Inscritos</th><th class="num">Promedio</th></tr></thead>
+                <tbody id="tbody-promedios"></tbody>
+            </table>
+            <p class="vacio" id="vacio-promedios">Aún no hay cursos.</p>
+        </div>
+
+        <div class="tab-panel" id="tab-ranking" hidden>
+            <label for="orden-ranking">Orden</label>
+            <select id="orden-ranking">
+                <option value="desc">Mayor a menor promedio</option>
+                <option value="asc">Menor a mayor promedio</option>
+            </select>
+            <table>
+                <thead><tr><th class="num">#</th><th>Matrícula</th><th>Nombre</th><th>Grupo</th><th class="num">Promedio general</th></tr></thead>
+                <tbody id="tbody-ranking"></tbody>
+            </table>
+            <p class="vacio" id="vacio-ranking">Aún no hay estudiantes.</p>
         </div>
     </section>
 </main>
