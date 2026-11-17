@@ -39,8 +39,8 @@ class GeneradorReportesTest {
         assertEquals(1, s.totalReprobados());
         assertEquals(2, s.totalEnRiesgo());                   // Luis (6.0) y Sofía (7.2)
         assertEquals(7.4, s.promedioGeneral(), DELTA);
-        assertEquals(9.0, s.calificacionMaxima(), DELTA);
-        assertEquals(6.0, s.calificacionMinima(), DELTA);
+        assertEquals(9.0, s.promedioMaximo(), DELTA);
+        assertEquals(6.0, s.promedioMinimo(), DELTA);
         assertEquals(200.0 / 3, s.porcentajeAprobacion(), DELTA);
     }
 

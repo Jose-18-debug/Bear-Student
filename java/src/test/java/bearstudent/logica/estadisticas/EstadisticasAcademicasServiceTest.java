@@ -63,8 +63,8 @@ class EstadisticasAcademicasServiceTest {
         assertEquals(0, r.totalEstudiantes());
         assertEquals(0, r.totalEvaluados());
         assertEquals(0.0, r.promedioGeneral());
-        assertEquals(0.0, r.calificacionMaxima());
-        assertEquals(0.0, r.calificacionMinima());
+        assertEquals(0.0, r.promedioMaximo());
+        assertEquals(0.0, r.promedioMinimo());
         assertEquals(0.0, r.porcentajeAprobacion());
     }
 
@@ -101,8 +101,8 @@ class EstadisticasAcademicasServiceTest {
         assertEquals(1, r.totalReprobados());
         assertEquals(1, r.totalEnRiesgo()); // 6.0 reprobado
         assertEquals(7.0, r.promedioGeneral(), 0.001);
-        assertEquals(8.0, r.calificacionMaxima());
-        assertEquals(6.0, r.calificacionMinima());
+        assertEquals(8.0, r.promedioMaximo());
+        assertEquals(6.0, r.promedioMinimo());
         assertEquals(50.0, r.porcentajeAprobacion());
     }
 }

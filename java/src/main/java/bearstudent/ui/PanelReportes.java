@@ -37,7 +37,7 @@ public class PanelReportes extends JPanel {
 
     private static final String[] NOMBRES_ESTADISTICAS = {
             "Evaluados", "Aprobados", "Reprobados", "En riesgo",
-            "Promedio general", "Calificación máxima", "Calificación mínima", "Aprobación"};
+            "Promedio general", "Promedio más alto", "Promedio más bajo", "Aprobación"};
 
     private final RegistroAcademico academico;
     private final GeneradorReportes generador;
@@ -172,8 +172,8 @@ public class PanelReportes extends JPanel {
         valores[2].setText(String.valueOf(s.totalReprobados()));
         valores[3].setText(String.valueOf(s.totalEnRiesgo()));
         valores[4].setText(dos(s.promedioGeneral()));
-        valores[5].setText(dos(s.calificacionMaxima()));
-        valores[6].setText(dos(s.calificacionMinima()));
+        valores[5].setText(dos(s.promedioMaximo()));
+        valores[6].setText(dos(s.promedioMinimo()));
         valores[7].setText(String.format(Locale.US, "%.1f %%", s.porcentajeAprobacion()));
     }
 

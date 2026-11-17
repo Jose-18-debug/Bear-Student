@@ -115,8 +115,8 @@ public final class ExportadorReportes {
         m.put("reprobados", s.totalReprobados());
         m.put("enRiesgo", s.totalEnRiesgo());
         m.put("promedioGeneral", hayNotas ? s.promedioGeneral() : null);
-        m.put("calificacionMaxima", hayNotas ? s.calificacionMaxima() : null);
-        m.put("calificacionMinima", hayNotas ? s.calificacionMinima() : null);
+        m.put("promedioMaximo", hayNotas ? s.promedioMaximo() : null);
+        m.put("promedioMinimo", hayNotas ? s.promedioMinimo() : null);
         m.put("porcentajeAprobacion", hayNotas ? s.porcentajeAprobacion() : null);
         return m;
     }
