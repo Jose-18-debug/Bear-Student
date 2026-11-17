@@ -204,9 +204,10 @@ public class VentanaPrincipal extends JFrame {
         paginaEstudiantes.getViewport().setBackground(NIEVE);
         paginaEstudiantes.getVerticalScrollBar().setUnitIncrement(16);
 
-        // Pestañas principales: una por cada parte del equipo (Partes 1, 2 y 3)
+        // Pestañas principales: una por cada parte del equipo (Partes 1 a 5)
         PanelCalificaciones panelCalificaciones = new PanelCalificaciones(registro, calificaciones);
         PanelPromedios panelPromedios = new PanelPromedios(registro, calificaciones);
+        PanelReportes panelReportes = new PanelReportes(registro, calificaciones);
         JTabbedPane principal = new JTabbedPane();
         principal.setUI(new PestanasUI());
         principal.setFont(fuente(BOTON, true));
@@ -214,9 +215,11 @@ public class VentanaPrincipal extends JFrame {
         principal.addTab("Estudiantes y cursos", paginaEstudiantes);
         principal.addTab("Calificaciones", panelCalificaciones);
         principal.addTab("Promedios", panelPromedios);
+        principal.addTab("Reportes", panelReportes);
         principal.addChangeListener(e -> {
             if (principal.getSelectedComponent() == panelCalificaciones) panelCalificaciones.refrescar();
             if (principal.getSelectedComponent() == panelPromedios) panelPromedios.refrescar();
+            if (principal.getSelectedComponent() == panelReportes) panelReportes.refrescar();
         });
         JPanel marco = new JPanel(new BorderLayout());
         marco.setOpaque(false);
