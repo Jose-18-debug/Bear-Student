@@ -1,5 +1,8 @@
 package bearstudent;
 
+import bearstudent.dto.*;
+import bearstudent.logica.*;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

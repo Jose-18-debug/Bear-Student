@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
-import static bearstudent.VentanaPrincipal.*;
+import static bearstudent.ui.VentanaPrincipal.*;
 
 /**
  * Interfaz gráfica de la Parte 2: evaluaciones, calificaciones y procesamiento por lote.

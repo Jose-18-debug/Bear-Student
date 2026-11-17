@@ -33,8 +33,8 @@ public class Estudiante {
         return codigosCursos.contains(claveCurso);
     }
 
-    /** Uso interno: la inscripción se hace desde RegistroAcademico. */
-    void agregarCurso(String claveCurso) {
+    /** Uso interno: la inscripción se hace desde RegistroAcademico (es público porque está en otro paquete). */
+    public void agregarCurso(String claveCurso) {
         codigosCursos.add(claveCurso);
     }
 

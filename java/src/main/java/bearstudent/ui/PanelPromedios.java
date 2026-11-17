@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import static bearstudent.VentanaPrincipal.*;
+import static bearstudent.ui.VentanaPrincipal.*;
 
 public class PanelPromedios extends JPanel {
     private static final String SIN_NOTAS = "Sin notas";

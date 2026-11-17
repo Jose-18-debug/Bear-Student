@@ -28,8 +28,8 @@ public class Curso {
 
     public int getTotalInscritos() { return matriculasInscritas.size(); }
 
-    /** Uso interno: la inscripción se hace desde RegistroAcademico. */
-    void agregarEstudiante(String matricula) {
+    /** Uso interno: la inscripción se hace desde RegistroAcademico (es público porque está en otro paquete). */
+    public void agregarEstudiante(String matricula) {
         matriculasInscritas.add(matricula);
     }
 
