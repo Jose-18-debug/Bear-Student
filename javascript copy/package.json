@@ -1,9 +1,0 @@
-{
-  "name": "bear-student-javascript",
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "test": "node --test",
-    "empaquetar": "node scripts/empaquetar.js"
-  }
-}
