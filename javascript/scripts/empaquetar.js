@@ -11,7 +11,10 @@ const raiz = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const RUTA_SALIDA = join(raiz, 'abrir-bear-student.html');
 
 // Orden en que se juntan: cada archivo va después de los que importa
-const MODULOS = ['src/errores.js', 'src/validacion.js', 'src/modelo.js', 'src/gestion.js', 'src/ui/app.js'];
+const MODULOS = [
+    'src/errores.js', 'src/validacion.js', 'src/modelo.js', 'src/gestion.js',
+    'src/estadisticas.js', 'src/reportes.js', 'src/ui/reportes-ui.js', 'src/ui/app.js',
+];
 
 const leer = (ruta) => readFileSync(join(raiz, ruta), 'utf8').replace(/\r\n/g, '\n');
 

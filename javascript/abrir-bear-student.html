@@ -472,6 +472,476 @@ class GestorAcademico {
     }
 }
 
+// ---- src/estadisticas.js ----
+//Redondea a 2 decimales (igual que en gestion.js)
+function redondear(numero) {
+    return Math.round(numero * 100) / 100;
+}
+
+//Normaliza un promedio: solo se acepta un número finito y no NaN.
+function esPromedioValido(promedio) {
+    return typeof promedio === 'number' && !Number.isNaN(promedio) && Number.isFinite(promedio);
+}
+
+class EstadisticasAcademicas {
+    constructor(gestor) {
+        this.gestor = gestor;
+    }
+
+    _validarClave(clave) {
+        const cla = textoObligatorio(clave, 'La clave no puede estar vacía');
+        if (!this.gestor || !this.gestor.cursos || !this.gestor.cursos.has(cla)) {
+            throw new ValidacionError(`El curso ${cla} no existe`);
+        }
+        return cla;
+    }
+
+    _promedioFinal(matricula, clave) {
+        if (this.gestor && typeof this.gestor.promedioFinal === 'function') {
+            return this.gestor.promedioFinal(matricula, clave);
+        }
+        const pesos = this.gestor.evaluaciones ? this.gestor.evaluaciones.get(clave) : null;
+        const calificaciones = (typeof this.gestor.calificacionesDe === 'function')
+            ? this.gestor.calificacionesDe(matricula, clave)
+            : [...(this.gestor.calificaciones.get(`${matricula}|${clave}`)?.values() ?? [])];
+        let suma = 0;
+        let peso = 0;
+        for (const cal of calificaciones) {
+            const ponderacion = pesos ? pesos.get(cal.evaluacion)?.ponderacion : undefined;
+            if (typeof ponderacion === 'number') {
+                suma += cal.valor * ponderacion;
+                peso += ponderacion;
+            }
+        }
+        return peso === 0 ? null : redondear(suma / peso);
+    }
+
+    _promedioGeneral(matricula) {
+        if (this.gestor && typeof this.gestor.promedioGeneral === 'function') {
+            return this.gestor.promedioGeneral(matricula);
+        }
+        const cursos = (typeof this.gestor.cursosDeEstudiante === 'function')
+            ? this.gestor.cursosDeEstudiante(matricula)
+            : [...(this.gestor.cursosPorEstudiante?.get(matricula) ?? [])];
+        const finales = cursos
+            .map((clave) => this._promedioFinal(matricula, clave))
+            .filter((p) => esPromedioValido(p));
+        return finales.length === 0 ? null : redondear(finales.reduce((a, b) => a + b, 0) / finales.length);
+    }
+
+    _estudiantes() {
+        if (this.gestor && this.gestor.estudiantes) {
+            return [...this.gestor.estudiantes.values()];
+        }
+        return [];
+    }
+
+    _clasificar(promedio, base) {
+        const valido = esPromedioValido(promedio);
+        if (!valido) {
+            return { ...base, promedio: promedio ?? null, estado: 'SIN_EVALUAR', enRiesgo: false };
+        }
+        const estado = promedio >= 7.0 ? 'APROBADO' : 'REPROBADO';
+        const enRiesgo = promedio <= 7.5;
+        return { ...base, promedio, estado, enRiesgo };
+    }
+
+    clasificarEstudiantesGlobal() {
+        const estudiantes = this._estudiantes();
+        return estudiantes.map((e) => this._clasificar(
+            this._promedioGeneral(e.matricula),
+            { matricula: e.matricula, nombre: e.nombre, grupo: e.grupo }
+        ));
+    }
+
+    clasificarEstudiantesPorCurso(clave) {
+        const cla = this._validarClave(clave);
+        const matriculas = (typeof this.gestor.estudiantesDeCurso === 'function')
+            ? this.gestor.estudiantesDeCurso(cla)
+            : [...(this.gestor.estudiantesPorCurso?.get(cla) ?? [])];
+        return matriculas.map((matricula) => {
+            const estudiante = this.gestor.estudiantes ? this.gestor.estudiantes.get(matricula) : null;
+            return this._clasificar(
+                this._promedioFinal(matricula, cla),
+                {
+                    matricula,
+                    nombre: estudiante ? estudiante.nombre : matricula,
+                    grupo: estudiante ? estudiante.grupo : '',
+                }
+            );
+        });
+    }
+
+    detectarRiesgoGlobal() {
+        return this.clasificarEstudiantesGlobal().filter((e) => e.enRiesgo);
+    }
+
+    detectarRiesgoPorCurso(clave) {
+        return this.clasificarEstudiantesPorCurso(clave).filter((e) => e.enRiesgo);
+    }
+
+    _calcular(clasificados) {
+        const validos = clasificados.filter((e) => esPromedioValido(e.promedio));
+        const totalEstudiantes = clasificados.length;
+        const totalEvaluados = validos.length;
+        const totalAprobados = validos.filter((e) => e.estado === 'APROBADO').length;
+        const totalReprobados = validos.filter((e) => e.estado === 'REPROBADO').length;
+        const totalEnRiesgo = validos.filter((e) => e.enRiesgo).length;
+
+        if (totalEvaluados === 0) {
+            return {
+                totalEstudiantes,
+                totalEvaluados: 0,
+                totalAprobados: 0,
+                totalReprobados: 0,
+                totalEnRiesgo: 0,
+                promedioGeneral: 0,
+                calificacionMaxima: 0,
+                calificacionMinima: 0,
+                porcentajeAprobacion: 0,
+            };
+        }
+
+        const suma = validos.reduce((acc, e) => acc + e.promedio, 0);
+        const promedioGeneral = redondear(suma / totalEvaluados);
+        const calificacionMaxima = redondear(Math.max(...validos.map((e) => e.promedio)));
+        const calificacionMinima = redondear(Math.min(...validos.map((e) => e.promedio)));
+        const porcentajeAprobacion = redondear((totalAprobados * 100) / totalEvaluados);
+
+        return {
+            totalEstudiantes,
+            totalEvaluados,
+            totalAprobados,
+            totalReprobados,
+            totalEnRiesgo,
+            promedioGeneral,
+            calificacionMaxima,
+            calificacionMinima,
+            porcentajeAprobacion,
+        };
+    }
+
+    calcularEstadisticasGlobal() {
+        return this._calcular(this.clasificarEstudiantesGlobal());
+    }
+
+    calcularEstadisticasPorCurso(clave) {
+        return this._calcular(this.clasificarEstudiantesPorCurso(clave));
+    }
+}
+
+// ---- src/reportes.js ----
+class EstadisticasDeReporte extends EstadisticasAcademicas {
+    resumir(clasificados) {
+        return this._calcular(clasificados);
+    }
+}
+
+const COLACION = new Intl.Collator('es');
+const COLACION_NUMERICA = new Intl.Collator('es', { numeric: true });
+
+function textoOpcional(valor) {
+    return typeof valor === 'string' ? valor.trim() : '';
+}
+
+function mismoGrupo(a, b) {
+    return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+}
+
+function compararPorPromedio(a, b) {
+    const sinA = typeof a.promedio !== 'number';
+    const sinB = typeof b.promedio !== 'number';
+    if (sinA !== sinB) return sinA ? 1 : -1;
+    if (!sinA && a.promedio !== b.promedio) return b.promedio - a.promedio;
+    return COLACION.compare(a.nombre, b.nombre) || COLACION.compare(a.matricula, b.matricula);
+}
+
+//Genera reportes a partir de GestorAcademico (Persona 1 y 2) y EstadisticasAcademicas (Persona 4)
+class ReportesAcademicos {
+    constructor(gestor) {
+        this.gestor = gestor;
+        this.estadisticas = new EstadisticasDeReporte(gestor);
+    }
+
+    reporteGeneral() {
+        return this.reporte({});
+    }
+
+    reportePorGrupo(grupo) {
+        if (textoOpcional(grupo) === '') {
+            throw new ValidacionError('El grupo no puede estar vacío');
+        }
+        return this.reporte({ grupo });
+    }
+
+    reportePorAsignatura(clave) {
+        if (textoOpcional(clave) === '') {
+            throw new ValidacionError('La clave no puede estar vacía');
+        }
+        return this.reporte({ clave });
+    }
+
+
+    reporte({ grupo, clave } = {}) {
+        const grp = textoOpcional(grupo);
+        const cla = textoOpcional(clave);
+
+        let curso = null;
+        if (cla !== '') {
+            if (!this.gestor.cursos.has(cla)) {
+                throw new ValidacionError(`El curso ${cla} no existe`);
+            }
+            curso = this.gestor.cursos.get(cla);
+        }
+        if (grp !== '') {
+            const existe = [...this.gestor.estudiantes.values()].some((e) => mismoGrupo(e.grupo, grp));
+            if (!existe) {
+                throw new ValidacionError(`El grupo ${grp} no existe`);
+            }
+        }
+
+        const base = curso
+            ? this.estadisticas.clasificarEstudiantesPorCurso(cla)
+            : this.estadisticas.clasificarEstudiantesGlobal();
+        const clasificados = (grp === '' ? base : base.filter((e) => mismoGrupo(e.grupo, grp)))
+            .sort(compararPorPromedio);
+
+        return {
+            titulo: this._titulo(grp, curso),
+            grupo: grp === '' ? null : grp,
+            asignatura: curso ? { clave: curso.clave, nombre: curso.nombre } : null,
+            estadisticas: this.estadisticas.resumir(clasificados),
+            estudiantes: clasificados,
+            porAsignatura: curso ? null : this._porAsignatura(grp),
+            porGrupo: grp === '' ? this._porGrupo(clasificados) : null,
+        };
+    }
+
+    _titulo(grupo, curso) {
+        const asignatura = curso ? `${curso.clave} - ${curso.nombre}` : '';
+        if (grupo && curso) return `Reporte del grupo ${grupo} en ${asignatura}`;
+        if (grupo) return `Reporte del grupo ${grupo}`;
+        if (curso) return `Reporte de la asignatura ${asignatura}`;
+        return 'Reporte general';
+    }
+
+    _porAsignatura(grupo) {
+        const filas = [];
+        for (const curso of this.gestor.cursos.values()) {
+            const clasificados = this.estadisticas.clasificarEstudiantesPorCurso(curso.clave)
+                .filter((e) => grupo === '' || mismoGrupo(e.grupo, grupo));
+            if (clasificados.length === 0) continue;
+            filas.push({
+                clave: curso.clave,
+                nombre: curso.nombre,
+                estadisticas: this.estadisticas.resumir(clasificados),
+            });
+        }
+        return filas;
+    }
+
+    _porGrupo(clasificados) {
+        const grupos = new Map();
+        for (const e of clasificados) {
+            const llave = e.grupo.trim().toLowerCase();
+            if (!grupos.has(llave)) grupos.set(llave, { grupo: e.grupo, lista: [] });
+            grupos.get(llave).lista.push(e);
+        }
+        return [...grupos.values()]
+            .sort((a, b) => COLACION_NUMERICA.compare(a.grupo, b.grupo))
+            .map(({ grupo, lista }) => ({ grupo, estadisticas: this.estadisticas.resumir(lista) }));
+    }
+}
+
+function escaparCSV(valor) {
+    if (valor === null || valor === undefined) return '';
+    let texto = String(valor);
+    if (typeof valor === 'string' && /^[=+\-@\t\r]/.test(texto)) {
+        texto = `'${texto}`;
+    }
+    return /[",\r\n]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
+}
+
+function filaCSV(valores) {
+    return valores.map(escaparCSV).join(',');
+}
+
+const COLUMNAS_ESTUDIANTES = ['matricula', 'nombre', 'grupo', 'promedio', 'estado', 'enRiesgo'];
+const COLUMNAS_RESUMEN = ['totalEstudiantes', 'totalEvaluados', 'totalAprobados', 'totalReprobados',
+    'totalEnRiesgo', 'promedioGeneral', 'calificacionMaxima', 'calificacionMinima', 'porcentajeAprobacion'];
+
+function reporteAJSON(reporte) {
+    return JSON.stringify(reporte, null, 2);
+}
+
+function reporteACSV(reporte) {
+    const filas = reporte.estudiantes.map((e) => filaCSV(COLUMNAS_ESTUDIANTES.map((c) => e[c])));
+    return [filaCSV(COLUMNAS_ESTUDIANTES), ...filas].join('\r\n');
+}
+
+function resumenACSV(reporte) {
+    const filas = [['reporte', reporte.titulo, reporte.estadisticas]];
+    for (const a of reporte.porAsignatura ?? []) {
+        filas.push(['asignatura', `${a.clave} - ${a.nombre}`, a.estadisticas]);
+    }
+    for (const g of reporte.porGrupo ?? []) {
+        filas.push(['grupo', g.grupo, g.estadisticas]);
+    }
+    const encabezado = filaCSV(['ambito', 'nombre', ...COLUMNAS_RESUMEN]);
+    return [encabezado, ...filas.map(([ambito, nombre, est]) =>
+        filaCSV([ambito, nombre, ...COLUMNAS_RESUMEN.map((c) => est[c])]))].join('\r\n');
+}
+
+function exportarReporte(reporte, formato) {
+    const tipo = typeof formato === 'string' ? formato.trim().toLowerCase() : formato;
+    if (tipo === 'json') return reporteAJSON(reporte);
+    if (tipo === 'csv') return reporteACSV(reporte);
+    if (tipo === 'csv-resumen') return resumenACSV(reporte);
+    throw new ValidacionError('Formato no válido: usa json, csv o csv-resumen');
+}
+
+function nombreArchivoReporte(reporte, formato) {
+    const partes = ['reporte'];
+    if (reporte.grupo) partes.push(reporte.grupo);
+    if (reporte.asignatura) partes.push(reporte.asignatura.clave);
+    if (partes.length === 1) partes.push('general');
+    if (formato === 'csv-resumen') partes.push('resumen');
+    const base = partes.join('-').replace(/[^A-Za-z0-9_-]+/g, '-').replace(/-{2,}/g, '-');
+    return `${base}.${formato === 'json' ? 'json' : 'csv'}`;
+}
+
+// ---- src/ui/reportes-ui.js ----
+const ESTADOS_REPORTE = { APROBADO: 'Aprobado', REPROBADO: 'Reprobado', SIN_EVALUAR: 'Sin evaluar' };
+
+function iniciarReportes(gestor, { $, aviso, llenarTabla, llenarSelect }) {
+    const reportes = new ReportesAcademicos(gestor);
+    let reporteActual = null;
+
+    const boton = document.createElement('button');
+    boton.className = 'tab';
+    boton.dataset.tab = 'reportes';
+    boton.setAttribute('role', 'tab');
+    boton.textContent = 'Reportes';
+    const lista = document.querySelector('.tab-lista');
+    lista.append(boton);
+
+    const panel = document.createElement('div');
+    panel.className = 'tab-panel';
+    panel.id = 'tab-reportes';
+    panel.hidden = true;
+    panel.innerHTML = `
+        <div class="formularios">
+            <div>
+                <label for="rep-grupo">Grupo</label>
+                <select id="rep-grupo"></select>
+            </div>
+            <div>
+                <label for="rep-curso">Asignatura</label>
+                <select id="rep-curso"></select>
+            </div>
+        </div>
+        <div class="botones">
+            <button type="button" class="btn primario" id="rep-generar">Generar reporte</button>
+            <button type="button" class="btn secundario" id="rep-json" disabled>Descargar JSON</button>
+            <button type="button" class="btn secundario" id="rep-csv" disabled>Descargar CSV</button>
+            <button type="button" class="btn secundario" id="rep-csv-resumen" disabled>Descargar CSV de resumen</button>
+        </div>
+        <h2 id="rep-titulo"></h2>
+        <p class="nota" id="rep-estadisticas"></p>
+        <table>
+            <thead><tr><th>Matrícula</th><th>Nombre</th><th>Grupo</th><th class="num">Promedio</th><th>Estado</th><th>Riesgo</th></tr></thead>
+            <tbody id="tbody-reporte"></tbody>
+        </table>
+        <p class="vacio" id="vacio-reporte">Elige un grupo y/o una asignatura y presiona Generar reporte.</p>
+        <div id="rep-asignaturas" hidden>
+            <h2>Por asignatura</h2>
+            <table>
+                <thead><tr><th>Asignatura</th><th class="num">Estudiantes</th><th class="num">Promedio</th><th class="num">Máxima</th><th class="num">Mínima</th><th class="num">Aprobación (%)</th></tr></thead>
+                <tbody id="tbody-reporte-asignaturas"></tbody>
+            </table>
+            <p class="vacio" id="vacio-reporte-asignaturas">No hay asignaturas con estudiantes.</p>
+        </div>
+        <div id="rep-grupos" hidden>
+            <h2>Por grupo</h2>
+            <table>
+                <thead><tr><th>Grupo</th><th class="num">Estudiantes</th><th class="num">Promedio</th><th class="num">Máxima</th><th class="num">Mínima</th><th class="num">Aprobación (%)</th></tr></thead>
+                <tbody id="tbody-reporte-grupos"></tbody>
+            </table>
+            <p class="vacio" id="vacio-reporte-grupos">No hay grupos con estudiantes.</p>
+        </div>`;
+    lista.parentElement.append(panel);
+
+    function llenarFiltros() {
+        const grupos = new Map();
+        for (const e of gestor.estudiantes.values()) {
+            const llave = e.grupo.toLowerCase();
+            if (!grupos.has(llave)) grupos.set(llave, e.grupo);
+        }
+        const ordenados = [...grupos.values()].sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+        llenarSelect($('rep-grupo'), [['', 'Todos los grupos'], ...ordenados.map((g) => [g, g])]);
+        llenarSelect($('rep-curso'), [['', 'Todas las asignaturas'],
+            ...[...gestor.cursos.values()].map((c) => [c.clave, `${c.clave} | ${c.nombre}`])]);
+    }
+
+    function filaDesglose(nombre, est) {
+        return [nombre, est.totalEstudiantes, est.promedioGeneral, est.calificacionMaxima,
+            est.calificacionMinima, est.porcentajeAprobacion];
+    }
+
+    function mostrar(reporte) {
+        const est = reporte.estadisticas;
+        $('rep-titulo').textContent = reporte.titulo;
+        $('rep-estadisticas').textContent =
+            `Estudiantes: ${est.totalEstudiantes} · Evaluados: ${est.totalEvaluados} · Aprobados: ${est.totalAprobados}` +
+            ` · Reprobados: ${est.totalReprobados} · En riesgo: ${est.totalEnRiesgo} · Promedio general: ${est.promedioGeneral}` +
+            ` · Máxima: ${est.calificacionMaxima} · Mínima: ${est.calificacionMinima} · Aprobación: ${est.porcentajeAprobacion}%`;
+        llenarTabla('reporte', reporte.estudiantes.map((e) => [
+            e.matricula, e.nombre, e.grupo, typeof e.promedio === 'number' ? e.promedio : '—',
+            ESTADOS_REPORTE[e.estado] ?? e.estado, e.enRiesgo ? 'En riesgo' : '']));
+        $('rep-asignaturas').hidden = reporte.porAsignatura === null;
+        llenarTabla('reporte-asignaturas', (reporte.porAsignatura ?? []).map((a) =>
+            filaDesglose(`${a.clave} | ${a.nombre}`, a.estadisticas)));
+        $('rep-grupos').hidden = reporte.porGrupo === null;
+        llenarTabla('reporte-grupos', (reporte.porGrupo ?? []).map((g) => filaDesglose(g.grupo, g.estadisticas)));
+        ['rep-json', 'rep-csv', 'rep-csv-resumen'].forEach((id) => { $(id).disabled = false; });
+    }
+
+    function generar() {
+        try {
+            reporteActual = reportes.reporte({ grupo: $('rep-grupo').value, clave: $('rep-curso').value });
+            mostrar(reporteActual);
+            aviso('Reporte generado.', 'ok');
+        } catch (error) {
+            if (!(error instanceof ValidacionError)) throw error;
+            aviso(error.message, 'error');
+        }
+    }
+
+    function descargar(formato) {
+        const nombre = nombreArchivoReporte(reporteActual, formato);
+        const texto = exportarReporte(reporteActual, formato);
+        const esJson = formato === 'json';
+        const archivo = new Blob([esJson ? texto : `\uFEFF${texto}`],
+            { type: esJson ? 'application/json;charset=utf-8' : 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(archivo);
+        const enlace = document.createElement('a');
+        enlace.href = url;
+        enlace.download = nombre;
+        document.body.append(enlace);
+        enlace.click();
+        enlace.remove();
+        URL.revokeObjectURL(url);
+        aviso(`Archivo ${nombre} descargado.`, 'ok');
+    }
+
+    boton.addEventListener('click', llenarFiltros);
+    $('rep-generar').addEventListener('click', generar);
+    $('rep-json').addEventListener('click', () => descargar('json'));
+    $('rep-csv').addEventListener('click', () => descargar('csv'));
+    $('rep-csv-resumen').addEventListener('click', () => descargar('csv-resumen'));
+    llenarFiltros();
+}
+
 // ---- src/ui/app.js ----
 const gestor = new GestorAcademico();     // aquí vive todo el estado; la página solo lo muestra
 const $ = (id) => document.getElementById(id);
@@ -677,6 +1147,8 @@ $('limpiar-curso').addEventListener('click', () => limpiar(campos.curso));
 
 // Quita el rojo de un campo en cuanto el usuario vuelve a escribir.
 Object.values(campos).flat().forEach((c) => c.addEventListener('input', () => c.classList.remove('invalid')));
+
+iniciarReportes(gestor, { $, aviso, llenarTabla, llenarSelect });
 
 // Pestañas: muestra solo el panel de la pestaña elegida.
 document.querySelectorAll('.tab').forEach((boton) => {

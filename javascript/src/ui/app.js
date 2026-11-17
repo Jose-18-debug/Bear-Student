@@ -1,5 +1,6 @@
 import { GestorAcademico } from '../gestion.js';
 import { ValidacionError } from '../errores.js';
+import { iniciarReportes } from './reportes-ui.js';
 
 const gestor = new GestorAcademico();     // aquí vive todo el estado; la página solo lo muestra
 const $ = (id) => document.getElementById(id);
@@ -205,6 +206,8 @@ $('limpiar-curso').addEventListener('click', () => limpiar(campos.curso));
 
 // Quita el rojo de un campo en cuanto el usuario vuelve a escribir.
 Object.values(campos).flat().forEach((c) => c.addEventListener('input', () => c.classList.remove('invalid')));
+
+iniciarReportes(gestor, { $, aviso, llenarTabla, llenarSelect });
 
 // Pestañas: muestra solo el panel de la pestaña elegida.
 document.querySelectorAll('.tab').forEach((boton) => {
