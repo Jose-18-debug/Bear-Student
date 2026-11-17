@@ -1,7 +1,6 @@
-package bearstudent;
+package bearstudent.logica;
 
-import bearstudent.dto.*;
-import bearstudent.logica.*;
+import bearstudent.dto.Calificacion;
 
 import org.junit.jupiter.api.Test;
 
