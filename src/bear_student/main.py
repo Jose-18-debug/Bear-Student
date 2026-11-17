@@ -2,12 +2,14 @@ import os
 import tkinter as tk
 from tkinter import ttk, messagebox
 from bear_student.domain.approval import ServicioAprobacion
+from bear_student.domain.reports import ServicioReportes
 from bear_student.domain.averages import ServicioPromedios
 from bear_student.domain.evaluations import ServicioEvaluaciones
 from bear_student.domain.students_courses import SistemaEscolar
 from bear_student.domain.AprobadosVista import AprobacionView
 from bear_student.ui.averages_view import PromediosView, formato
 from bear_student.ui.evaluations_view import EvaluacionesView
+from bear_student.ui.reports_view import ReportesView
 from bear_student.ui.widgets import BotonInvierno, PestanaDesplazable
 from bear_student.ui.theme import (
     ALTO_LOGO,
@@ -38,6 +40,9 @@ class Aplicacion(tk.Tk):
         )
         self.servicio_promedios = ServicioPromedios(self.sistema, self.servicio_evaluaciones)
         self.servicio_aprobacion = ServicioAprobacion(self.servicio_promedios)
+        self.servicio_reportes = ServicioReportes(
+            self.sistema, self.servicio_promedios, self.servicio_aprobacion
+        )
         self._configurar_estilos()
         self._crear_interfaz()
 
@@ -222,6 +227,12 @@ class Aplicacion(tk.Tk):
             self.servicio_aprobacion,
             fuente=self._f(TEXTO),
         )
+        self.vista_reportes = ReportesView(
+            self.pestanas,
+            self.sistema,
+            self.servicio_reportes,
+            fuente=self._f(TEXTO),
+        )
         # Las notas se capturan en otra pestaña: al cambiar de pestaña se
         # recalculan los promedios para que siempre estén al día.
         self.pestanas.bind("<<NotebookTabChanged>>", lambda _e: self._actualizar_promedios())
@@ -352,6 +363,7 @@ class Aplicacion(tk.Tk):
                                       for c in self.sistema.cursos.values()])
         self.vista_promedios.actualizar()
         self.vista_estadisticas.actualizar()
+        self.vista_reportes.actualizar()
 
 
 if __name__ == "__main__":
