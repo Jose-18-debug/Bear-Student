@@ -1,0 +1,1 @@
+"""Aplicación escolar Bear Student."""

@@ -1,0 +1,1 @@
+"""Reglas del dominio escolar."""
